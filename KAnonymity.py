@@ -4,9 +4,11 @@ import pandas as pd
 class KAnonymity:
 
     def __init__(self, df, categorical):
-        self.df = df.select("*").toPandas()
+        #self.df = df.select("*").toPandas()
+        self.df = df
         self.categorical = categorical
-
+        for name in categorical:
+            df[name] = df[name].astype('category')
     """
     @PARAMS
     df - spark.sql dataframe
@@ -83,55 +85,6 @@ class KAnonymity:
             else:
                 finished_partitions.append(partition)
         return finished_partitions
-
-
-    def __build_indexes(self, df):
-        indexes = {}
-        categorical = self.categorical
-        for column in categorical:
-            values = sorted(df[column].unique())
-            indexes[column] = {x: y for x, y in zip(
-                values, range(len(values)))}
-        return indexes
-
-
-    def __get_coords(self, df, column, partition, indexes, offset=0.1):
-
-        categorical = self.categorical
-        if column in categorical:
-            sv = df[column][partition].sort_values()
-            l, r = indexes[column][sv[sv.index[0]]
-                                   ], indexes[column][sv[sv.index[-1]]]+1.0
-        else:
-            sv = df[column][partition].sort_values()
-            next_value = sv[sv.index[-1]]
-            larger_values = df[df[column] > next_value][column]
-            if len(larger_values) > 0:
-                next_value = larger_values.min()
-            l = sv[sv.index[0]]
-            r = next_value
-        # we add some offset to make the partitions more easily visible
-        l -= offset
-        r += offset
-        return l, r
-
-
-    def __get_partition_rects(self, df, partitions, column_x, column_y, indexes, offsets=[0.1, 0.1]):
-        rects = []
-        for partition in partitions:
-            xl, xr = self.__get_coords(
-                df, column_x, partition, indexes, offset=offsets[0])
-            yl, yr = self.__get_coords(
-                df, column_y, partition, indexes, offset=offsets[1])
-            rects.append(((xl, yl), (xr, yr)))
-        return rects
-
-
-    def __get_bounds(self, df, column, indexes, offset=1.0):
-        categorical = self.categorical
-        if column in categorical:
-            return 0-offset, len(indexes[column])+offset
-        return df[column].min()-offset, df[column].max()+offset
 
 
     def __agg_categorical_column(self, series):
