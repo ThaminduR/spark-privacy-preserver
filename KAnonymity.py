@@ -1,14 +1,18 @@
 import pandas as pd
+import utility 
 
-
-class KAnonymity:
-
+class Preserver:
+    
     def __init__(self, df, categorical):
         #self.df = df.select("*").toPandas()
+        self.k  = None
+        self.l = None
+        self.t = None
         self.df = df
         self.categorical = categorical
         for name in categorical:
             df[name] = df[name].astype('category')
+
     """
     @PARAMS
     df - spark.sql dataframe
@@ -54,7 +58,7 @@ class KAnonymity:
             dfr = dfp.index[dfp >= median]
             return (dfl, dfr)
 
-    def __is_k_anonymous(self, df, partition, sensitive_column, k=3):
+    def __is_k_anonymous(self, partition, k):
 
         if len(partition) < k:
             return False
@@ -77,7 +81,8 @@ class KAnonymity:
             spans = self.__get_spans(df[feature_columns], partition, scale)
             for column, span in sorted(spans.items(), key=lambda x: -x[1]):
                 lp, rp = self.__split(df, partition, column)
-                if not is_valid(df, lp, sensitive_column) or not is_valid(df, rp, sensitive_column):
+                k = self.k
+                if not is_valid(df, lp, sensitive_column,k) or not is_valid(df, rp, sensitive_column,k):
                     continue
                 partitions.extend((lp, rp))
                 break
@@ -91,9 +96,10 @@ class KAnonymity:
     def __agg_numerical_column(self, series):
         return series.mean()
 
-    def build_anonymized_dataset(self, spark, feature_columns, sensitive_column, max_partitions=None):
+    def k_anonymize(self, spark,k, feature_columns, sensitive_column, max_partitions=None):
         aggregations = {}
         df = self.df
+        self.k = k
         full_spans = self.__get_spans(df, df.index)
         partitions = self.__partition_dataset(
             df, feature_columns, sensitive_column, full_spans, self.__is_k_anonymous)
@@ -111,7 +117,7 @@ class KAnonymity:
             if max_partitions is not None and i > max_partitions:
                 break
             grouped_columns = df.loc[partition].assign(
-                k=1).groupby('k').agg(aggregations, squeeze=False)
+                m=1).groupby('m').agg(aggregations, squeeze=False)
             sensitive_counts = df.loc[partition].groupby(
                 sensitive_column).agg({sensitive_column: 'count'})
             values = grouped_columns.iloc[0].to_dict()
@@ -124,6 +130,7 @@ class KAnonymity:
 
                 })
                 rows.append(values.copy())
+
         dfn = pd.DataFrame(rows)
         pdfn = dfn.sort_values(feature_columns+[sensitive_column])
         dfn = spark.createDataFrame(pdfn)
