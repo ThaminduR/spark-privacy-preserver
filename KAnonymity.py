@@ -86,10 +86,10 @@ class KAnonymity:
         return finished_partitions
 
     def __agg_categorical_column(self, series):
-        return [','.join(set(series))]
+        return ','.join(set(series))
 
     def __agg_numerical_column(self, series):
-        return [series.mean()]
+        return series.mean()
 
     def build_anonymized_dataset(self, spark, feature_columns, sensitive_column, max_partitions=None):
         aggregations = {}
