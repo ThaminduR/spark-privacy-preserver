@@ -60,7 +60,6 @@ class KAnonymity:
             return False
         return True
 
-
     """
     @PARAMS
     df - spark.sql dataframe
@@ -86,14 +85,11 @@ class KAnonymity:
                 finished_partitions.append(partition)
         return finished_partitions
 
-
     def __agg_categorical_column(self, series):
         return [','.join(set(series))]
 
-
     def __agg_numerical_column(self, series):
         return [series.mean()]
-
 
     def build_anonymized_dataset(self, spark, feature_columns, sensitive_column, max_partitions=None):
         aggregations = {}
@@ -114,8 +110,8 @@ class KAnonymity:
                 print("Finished {} partitions...".format(i))
             if max_partitions is not None and i > max_partitions:
                 break
-            grouped_columns = df.loc[partition].agg(
-                aggregations, squeeze=False)
+            grouped_columns = df.loc[partition].assign(
+                k=1).groupby('k').agg(aggregations, squeeze=False)
             sensitive_counts = df.loc[partition].groupby(
                 sensitive_column).agg({sensitive_column: 'count'})
             values = grouped_columns.iloc[0].to_dict()
