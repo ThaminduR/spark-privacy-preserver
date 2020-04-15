@@ -15,7 +15,7 @@ class Preserver:
 
     """
     @PARAMS
-    df - spark.sql dataframe
+    df - pandas dataframe
     partition - parition for whic to calculate the spans
     scale: if given, the spans of each column will be divided 
            by the scale for that column
@@ -38,7 +38,7 @@ class Preserver:
 
     """
     @PARAMS
-    df - spark.sql dataframe
+    df - pandas dataframe
     partition - parition for whic to calculate the spans
     column: column to split
     """
@@ -66,7 +66,7 @@ class Preserver:
 
     """
     @PARAMS
-    df - spark.sql dataframe
+    df - pandas dataframe
     feature_column - list of column names along which to partitions the dataset
     scale - column spans
     is_valid - function to check the validity of a partition
@@ -113,7 +113,7 @@ class Preserver:
 
         for i, partition in enumerate(partitions):
             if i % 100 == 1:
-                print("Finished {} partitions...".format(i))
+                print("Finished {} partitions.".format(i))
             if max_partitions is not None and i > max_partitions:
                 break
             grouped_columns = df.loc[partition].assign(
@@ -134,4 +134,5 @@ class Preserver:
         dfn = pd.DataFrame(rows)
         pdfn = dfn.sort_values(feature_columns+[sensitive_column])
         dfn = spark.createDataFrame(pdfn)
+        self.k = k
         return dfn
