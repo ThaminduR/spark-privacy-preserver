@@ -1,37 +1,58 @@
-from numbers import Real
-import pandas as pd
+from numbers import Real  # type: ignore
 
-from diffprivlib.mechanisms import LaplaceTruncated
-from diffprivlib.mechanisms import Binary
+import pandas as pd  # type: ignore
+from pandas import DataFrame  # type: ignore
+from numpy import ndarray  # type: ignore
 
-import swifter
+from diffprivlib.mechanisms import LaplaceTruncated  # type: ignore
+from diffprivlib.mechanisms import Binary  # type: ignore
+
+import swifter  # type: ignore
+
+from typing import Dict, TypedDict, Union, Optional  # type: ignore
+
+
+class Column(TypedDict, total=False):
+    column_name: str
+    category: str
+    epsilon: Union[int, float]
+    delta: Union[int, float]
+    sensitivity: Union[int, float, None]
+    lower_bound: Union[int, float]
+    upper_bound: Union[int, float]
+    round: int
+    label1: Optional[str]
+    label2: Optional[str]
 
 
 class DPInterface:
 
-    def __init__(self, global_epsilon=None, global_delta=0.0, df=None):
+    def __init__(self,
+                 global_epsilon: Union[int, float, None] = None,
+                 global_delta: Union[int, float] = 0.0,
+                 df: Optional[DataFrame] = None) -> None:
 
-        self.df = df
-        self.__columns = {}
+        self.df: Optional[DataFrame] = df
+        self.__columns: Dict[str, Column] = {}
 
-        self.__epsilon = None
-        self.__delta = None
+        self.__epsilon: Optional[float] = None
+        self.__delta: Optional[float] = None
 
-        self.__sensitivity = None
+        self.__sensitivity: Union[int, float, None] = None
 
         if global_epsilon is not None and self.__check_epsilon_delta(global_epsilon, global_delta):
             self.__epsilon = float(global_epsilon)
             self.__delta = float(global_delta)
 
     @staticmethod
-    def __check_epsilon_delta(epsilon, delta):
+    def __check_epsilon_delta(epsilon: Union[int, float], delta: Union[int, float]) -> bool:
         if not isinstance(epsilon, Real) or not isinstance(delta, Real):
             raise TypeError("Epsilon and delta must be numeric")
 
         if epsilon < 0:
             raise ValueError("Epsilon must be non-negative")
 
-        if not 0 <= delta <= 1:
+        if not 0 <= float(delta) <= 1:
             raise ValueError("Delta must be in range [0, 1]")
 
         if epsilon == 0 and delta == 0:
@@ -40,7 +61,7 @@ class DPInterface:
         return True
 
     @staticmethod
-    def __check_sensitivity(sensitivity):
+    def __check_sensitivity(sensitivity: Union[int, float, None]) -> bool:
         if not isinstance(sensitivity, Real):
             raise TypeError("Sensitivity must be numeric")
 
@@ -50,7 +71,7 @@ class DPInterface:
         return True
 
     @staticmethod
-    def __check_labels(df, column_name, label1, label2):
+    def __check_labels(df: DataFrame, column_name: str, label1: Optional[str], label2: Optional[str]) -> bool:
         if not isinstance(label1, str) or not isinstance(label2, str):
             raise TypeError("Labels must be strings.")
 
@@ -60,23 +81,23 @@ class DPInterface:
         if label1 == label2:
             raise ValueError("Labels must not match")
 
-        labels = df[column_name].unique()
-        if len(labels) is 2 and label1 in labels and label2 in labels:
-            return True
-        else:
+        labels: ndarray = df[column_name].unique()
+        if len(labels) is not 2 or label1 not in labels or label2 not in labels:
             raise ValueError("Column has multiple unique labels")
 
-    def set_global_epsilon_delta(self, epsilon, delta=0.0):
+        return True
+
+    def set_global_epsilon_delta(self, epsilon: Union[int, float], delta: Union[int, float] = 0.0) -> None:
         if self.__check_epsilon_delta(epsilon, delta):
             self.__epsilon = float(epsilon)
             self.__delta = float(delta)
 
-    def set_global_sensitivity(self, sensitivity):
+    def set_global_sensitivity(self, sensitivity: Union[int, float]) -> None:
         if self.__check_sensitivity(sensitivity):
             self.__sensitivity = float(sensitivity)
 
     @staticmethod
-    def __check_bounds(lower, upper):
+    def __check_bounds(lower: Union[int, float], upper: Union[int, float]) -> bool:
 
         if not isinstance(lower, Real) or not isinstance(upper, Real):
             raise TypeError("Bounds must be numeric")
@@ -86,13 +107,15 @@ class DPInterface:
 
         return True
 
-    def set_df(self, df):
+    def set_df(self, df: DataFrame) -> None:
         self.df = df
 
-    def add_column(self, column_name, category,
-                   epsilon=None, delta=None,
-                   sensitivity=None, lower_bound=None, upper_bound=None, round=None,
-                   label1=None, label2=None):
+    def add_column(self, column_name: str, category: str,
+                   epsilon: Union[int, float, None] = None, delta: Union[int, float, None] = None,
+                   sensitivity: Union[int, float, None] = None,
+                   lower_bound: Union[int, float, None] = None, upper_bound: Union[int, float, None] = None,
+                   round: Optional[int] = None,
+                   label1: Optional[str] = None, label2: Optional[str] = None):
 
         if self.df is None:
             raise ValueError("Add an eligible DataFrame before adding columns")
@@ -103,7 +126,7 @@ class DPInterface:
         if category not in ['numeric', 'boolean']:
             raise ValueError("Cannot find category in available list")
 
-        column = {'category': category}
+        column: Column = {'category': category}
 
         if epsilon is None:
             if self.__epsilon is not None:
@@ -123,7 +146,8 @@ class DPInterface:
 
         if category is 'numeric':
 
-            if sensitivity is None: sensitivity = self.__sensitivity
+            if sensitivity is None:
+                sensitivity = self.__sensitivity
             if self.__check_sensitivity(sensitivity):
                 column['sensitivity'] = sensitivity
 
