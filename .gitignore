@@ -6,4 +6,4 @@ data_53000kb.csv
 diffprivlib_docs.pdf
 diffprivlib_overview.pdf
 test.ipynb
-test.py
+.mypy_cache
