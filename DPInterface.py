@@ -26,11 +26,57 @@ class Column(TypedDict, total=False):
 
 
 class DPInterface:
+    r""" Create differentially private Pandas dataset
+
+    The class makes use of the 'diffprivlib' library by IBM to create differentially private Pandas dataset.
+    It can handle columns with two major data types: 'numeric' and 'boolean'
+        'numeric': column should have only numbers or `NaN' value
+                    utilizes LaplaceTruncated mechanism from diffprivlib.mechanisms
+
+        'boolean': each row of column should have one of two boolean values set by user
+                    utilizes Binary mechanism from diffprivlib.mechanisms
+
+    Attributes:
+        df: A Pandas DataFrame object. Methods such as `__check_labels`, `add_column` and `execute`
+            will raise ValueError if df is None.
+
+    Methods:
+        set_global_epsilon_delta:
+            Assigns common epsilon and delta to be used by all columns if they lack
+            column specific values for epsilon and delta
+
+        set_global_sensitivity:
+            Assigns common sensitivity to be used by all columns if they lack
+            column specific value for sensitivity
+
+        set_df: Assigns DataFrame object to the class
+
+        add_column: Adds column dictionary to `__columns`
+
+        execute: changes df to be differentially private. This change is not reversible.
+
+    Examples:
+        foo = DPInterface()
+            You may have to manually set epsilon for each column. Otherwise raises ValueError
+
+        foo = DPInterface(global_epsilon=0.00001)
+
+        foo = DPInterface(global_epsilon=0.00001, global_delta=0.5)
+            global_delta is an optional parameter
+
+    """
 
     def __init__(self,
                  global_epsilon: Union[int, float, None] = None,
                  global_delta: Union[int, float] = 0.0,
                  df: Optional[DataFrame] = None) -> None:
+        r""" Inits DPInterface with either epsilon, delta and df or None
+
+        Args:
+            global_epsilon: Common epsilon value to be used by all columns as a fail-safe
+            global_delta: Common delta value to be used by all columns as a fail-safe. Defaults to 0.0
+            df: DataFrame to be converted. Can change to a different dataframe with set_df()
+        """
 
         self.df: Optional[DataFrame] = df
         self.__columns: Dict[str, Column] = {}
@@ -46,6 +92,20 @@ class DPInterface:
 
     @staticmethod
     def __check_epsilon_delta(epsilon: Union[int, float], delta: Union[int, float]) -> bool:
+        r""" checks whether epsilon and delta meet required conditions for method `execute`
+
+        Always called disregarding category. Both 'LaplaceTruncated' and 'Binary' mechanism
+        require epsilon and delta.
+
+        Args:
+            epsilon: epsilon value to be used by method `execute`
+            delta: delta value to be used by method `execute`
+
+        Returns: True if parameters satisfy the conditions
+
+        Raises: TypeError, ValueError if parameters have not been set correctly
+
+        """
         if not isinstance(epsilon, Real) or not isinstance(delta, Real):
             raise TypeError("Epsilon and delta must be numeric")
 
@@ -62,6 +122,18 @@ class DPInterface:
 
     @staticmethod
     def __check_sensitivity(sensitivity: Union[int, float, None]) -> bool:
+        r""" checks whether sensitivity meets required conditions for method `execute`
+
+        Called only when category = 'numeric'
+
+        Args:
+            sensitivity: sensitivity value to be used by method `execute`. Only apply for category 'numeric'
+
+        Returns: True if parameter satisfies the conditions
+
+        Raises: TypeError, ValueError if parameter has not been set correctly
+
+        """
         if not isinstance(sensitivity, Real):
             raise TypeError("Sensitivity must be numeric")
 
@@ -72,6 +144,21 @@ class DPInterface:
 
     @staticmethod
     def __check_labels(df: DataFrame, column_name: str, label1: Optional[str], label2: Optional[str]) -> bool:
+        r""" checks whether labels meet required conditions for method `execute`.
+
+        Called only when category = 'boolean'
+
+        Args:
+            df: DataFrame object
+            column_name: specific column which is to be executed using 'Binary' mechanism
+            label1: label to be used by 'Binary' mechanism
+            label2: label to be used by 'Binary' mechanism
+
+        Returns: True if parameters satisfy the conditions
+
+        Raises: TypeError, ValueError if parameters have not been set correctly
+
+        """
         if not isinstance(label1, str) or not isinstance(label2, str):
             raise TypeError("Labels must be strings.")
 
@@ -83,21 +170,26 @@ class DPInterface:
 
         labels: ndarray = df[column_name].unique()
         if len(labels) is not 2 or label1 not in labels or label2 not in labels:
+            # checks whether all the rows of column have either label1 or label2
             raise ValueError("Column has multiple unique labels")
 
         return True
 
-    def set_global_epsilon_delta(self, epsilon: Union[int, float], delta: Union[int, float] = 0.0) -> None:
-        if self.__check_epsilon_delta(epsilon, delta):
-            self.__epsilon = float(epsilon)
-            self.__delta = float(delta)
-
-    def set_global_sensitivity(self, sensitivity: Union[int, float]) -> None:
-        if self.__check_sensitivity(sensitivity):
-            self.__sensitivity = float(sensitivity)
-
     @staticmethod
     def __check_bounds(lower: Union[int, float], upper: Union[int, float]) -> bool:
+        r""" checks whether lower and upper bounds for a specific column bound to their conditions
+
+        Called only when category = 'numeric'
+
+        Args:
+            lower: lower bound of a column
+            upper: upper bound of a column
+
+        Returns: True if parameters satisfy the conditions
+
+        Raises: TypeError, ValueError if parameters have not been set correctly
+
+        """
 
         if not isinstance(lower, Real) or not isinstance(upper, Real):
             raise TypeError("Bounds must be numeric")
@@ -107,7 +199,47 @@ class DPInterface:
 
         return True
 
+    def set_global_epsilon_delta(self, epsilon: Union[int, float], delta: Union[int, float] = 0.0) -> None:
+        r"""  set global epsilon and delta if they satisfy method `__check_epsilon_delta`
+
+        Args:
+            epsilon: epsilon value to be used by method `execute`
+            delta: delta value to be used by method `execute`
+
+        Raises:
+            The method itself will not raise any exceptions.
+            However inner method ``__check_epsilon_delta` may raise Exception,
+            only if parameters have not been set correctly
+        """
+
+        if self.__check_epsilon_delta(epsilon, delta):
+            self.__epsilon = float(epsilon)
+            self.__delta = float(delta)
+
+    def set_global_sensitivity(self, sensitivity: Union[int, float]) -> None:
+        r"""  set global sensitivity if it satisfies method `__check_sensitivity`
+
+        Args:
+            sensitivity: sensitivity value to be used by method `execute`.
+
+        Raises:
+            The method itself will not raise any exceptions.
+            However inner method `__check_sensitivity` may raise Exception,
+            only if parameters have not been set correctly
+        """
+
+        if self.__check_sensitivity(sensitivity):
+            self.__sensitivity = float(sensitivity)
+
     def set_df(self, df: DataFrame) -> None:
+        r""" sets DataFrame object to class.
+
+        Multiple DataFrames can be set, but not at same time.
+
+        Args:
+            df: DataFrame object
+
+        """
         self.df = df
 
     def add_column(self, column_name: str, category: str,
@@ -115,7 +247,35 @@ class DPInterface:
                    sensitivity: Union[int, float, None] = None,
                    lower_bound: Union[int, float, None] = None, upper_bound: Union[int, float, None] = None,
                    round: Optional[int] = None,
-                   label1: Optional[str] = None, label2: Optional[str] = None):
+                   label1: Optional[str] = None, label2: Optional[str] = None) -> None:
+
+        r""" adds a column with required parameters to the __columns dictionary.
+
+        A column may have specific details. Hence this method allows user to set them individually for a column.
+        However in case any one parameter is missing, appropriate value will be copied from available global
+        parameters and passed instead.
+
+        Args:
+            -------------------- common arguments --------------------------
+            column_name: Name of column
+            category: Category the column belongs to: ['numeric', 'boolean']
+            epsilon: Epsilon value to be used by method `execute`
+            delta: Delta value to be used by method `execute`
+
+            ---------------------- arguments specific to category = 'numeric' ----------------------
+            sensitivity: Sensitivity value to be used by method `execute`.
+            lower_bound: Lower bound of a column.
+            upper_bound: Upper bound of a column.
+            round: Rounding factor. Values can be rounded off after applying a certain mechanism.
+
+            ---------------------- arguments specific to category = 'boolean' ----------------------
+            label1: label to be used by 'Binary' mechanism.
+            label2: label to be used by 'Binary' mechanism.
+
+        Raises: TypeError, ValueError if parameters have not been set correctly.
+                Inner methods may raise Exception.
+
+        """
 
         if self.df is None:
             raise ValueError("Add an eligible DataFrame before adding columns")
@@ -170,7 +330,16 @@ class DPInterface:
 
         self.__columns[str(column_name)] = column
 
-    def execute(self, mode='normal'):
+    def execute(self, mode: Optional[str] = None):
+        r"""
+        Args:
+            mode: mode to which method `execute` works. 'heavy' mode applies Swifter.
+
+        Raises:
+            The method itself will not raise any exceptions.
+            However inner methods may raise Exception, only if parameters have not been set correctly
+
+        """
 
         laplace = LaplaceTruncated()
         binary = Binary()
@@ -188,16 +357,16 @@ class DPInterface:
                 if 'round' in details:
                     round_randomise = lambda cell: round(laplace.randomise(cell), details['round'])
 
-                    if mode is 'normal':
-                        self.df[column_name] = self.df[column_name].apply(round_randomise)
-                    elif mode is 'heavy':
+                    if mode is 'heavy':
                         self.df[column_name] = self.df[column_name].swifter.apply(round_randomise)
+                    else:
+                        self.df[column_name] = self.df[column_name].apply(round_randomise)
 
                 else:
-                    if mode is 'normal':
-                        self.df[column_name] = self.df[column_name].apply(laplace.randomise)
-                    elif mode is 'heavy':
+                    if mode is 'heavy':
                         self.df[column_name] = self.df[column_name].swifter.apply(laplace.randomise)
+                    else:
+                        self.df[column_name] = self.df[column_name].apply(laplace.randomise)
 
             elif details['category'] is 'boolean':
 
