@@ -7,6 +7,7 @@ scale: if given, the spans of each column will be divided
         by the scale for that column
 """
 
+
 def get_spans(df, categorical, partition, scale=None):
 
     columns = list(df.columns)
@@ -21,12 +22,14 @@ def get_spans(df, categorical, partition, scale=None):
         spans[column] = span
     return spans
 
+
 """
 @PARAMS
 df - pandas dataframe
 partition - parition for whic to calculate the spans
 column: column to split
 """
+
 
 def split(df, categorical, partition, column):
     dfp = df[column][partition]
@@ -41,11 +44,21 @@ def split(df, categorical, partition, column):
         dfr = dfp.index[dfp >= median]
         return (dfl, dfr)
 
+
 def is_k_anonymous(partition, k):
 
     if len(partition) < k:
         return False
     return True
+
+
+def diversity(df, partition, column):
+    return len(df[column][partition].unique())
+
+
+def is_l_diverse(df, partition, sensitive_column, l):
+    return diversity(df, partition, sensitive_column) >= l
+
 
 """
 @PARAMS
@@ -55,26 +68,34 @@ scale - column spans
 is_valid - function to check the validity of a partition
 """
 
-def partition_dataset(df, k, categorical, feature_columns, sensitive_column, scale, is_valid):
+
+def partition_dataset(df, k, l, categorical, feature_columns, sensitive_column, scale):
 
     finished_partitions = []
     partitions = [df.index]
     while partitions:
         partition = partitions.pop(0)
         spans = get_spans(df[feature_columns],
-                                    categorical, partition, scale)
+                          categorical, partition, scale)
         for column, span in sorted(spans.items(), key=lambda x: -x[1]):
             lp, rp = split(df, categorical, partition, column)
-            if not is_valid(lp, k) or not is_valid(rp, k):
-                continue
+            if l is None:
+                if not is_k_anonymous(lp, k) or not is_k_anonymous(rp, k):
+                    continue
+            if l is not None:
+                if not is_k_anonymous(lp, k) or not is_k_anonymous(rp, k) or not is_l_diverse(df, lp, sensitive_column, l) or not is_l_diverse(df, rp, sensitive_column, l):
+                    continue
             partitions.extend((lp, rp))
             break
         else:
             finished_partitions.append(partition)
     return finished_partitions
 
+
 def agg_categorical_column(series):
     return ','.join(set(series))
 
+
 def agg_numerical_column(series):
     return series.mean()
+

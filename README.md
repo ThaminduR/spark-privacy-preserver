@@ -19,9 +19,9 @@ A Jupyter notebook can be found here
 
 ## Installation
 
-## Usage
+## Usage - Basic Mondrian
 
-### Basic Mondrian K Anonymity
+### K Anonymity
 
 The `spark.sql.dataframe` you get after anonymizing will always contain a extra column `count` which indicates the number of similar rows. 
 
