@@ -61,7 +61,7 @@ your_anonymized_dataframe = Preserver.k_anonymize(df,
 ```
 
 Following code snippet shows how to construct an example schema.
-You need to always consider the count column when constructing the schema. Count column is a integer type column.
+You need to always consider the count column when constructing the schema. Count column is an integer type column.
 
 ```python
 from spark.sql.type import *
