@@ -57,3 +57,4 @@ class Preserver:
         #TODO decide wether to keep this or not
         new_df = pdf.withColumn("common", lit(0))
         return new_df.groupby('common').apply(anonymize)
+        #return pdf.groupby('common').apply(anonymize)
