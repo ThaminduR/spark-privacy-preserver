@@ -8,7 +8,8 @@ This module provides a simple tool for anonymizing a dataset using Spark. Given 
 ## Demo
 
 A Jupyter notebook can be found here 
-TODO: add jupyter notebook
+
+`TODO: add jupyter notebook`
 
 ## Requirements
 
@@ -33,6 +34,24 @@ from spark_privacy_preserver.mondrian_preserver import Preserver #requires panda
 #sensitive_column - string - what you need as senstive attribute 
 #categorical - set -all categorical columns of the original dataframe as a set
 #schema - spark.sql.types StructType - schema of the output dataframe you are expecting
+
+df = spark.read.csv(your_csv_file).toDF('age',
+    'occupation',
+    'race',
+    'sex',
+    'hours-per-week',
+    'income')
+
+categorical = set((
+    'occupation',
+    'sex',
+    'race'
+))
+
+feature_columns = ['age', 'occupation']
+
+sensitive_column = 'income'
+
 your_anonymized_dataframe = Preserver.k_anonymize(df,
                                                 k,
                                                 feature_columns,
@@ -41,12 +60,14 @@ your_anonymized_dataframe = Preserver.k_anonymize(df,
                                                 schema)
 ```
 
-#### Example Schema
-
+Following code snippet shows how to construct an example schema.
 You need to always consider the count column when constructing the schema. Count column is a integer type column.
 
 ```python
 from spark.sql.type import *
+
+#age, occupation - feature columns
+#income - sensitive column
 
 schema = StructType([
     StructField("age", DoubleType()),
