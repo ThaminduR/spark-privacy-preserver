@@ -1,4 +1,4 @@
 testlibrary.py
-__pycache__
+__pycache__/
 test/
-utils/__pycache__
+utils/__pycache__/
