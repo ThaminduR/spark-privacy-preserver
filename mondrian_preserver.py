@@ -43,9 +43,9 @@ class Preserver:
 
         @pandas_udf(schema, PandasUDFType.GROUPED_MAP)
         def anonymize(pdf):
-            df = l_diversity(pdf, k, feature_columns,
+            df = l_diversity(pdf, k, l, feature_columns,
                              sensitive_column, categorical)
-
+            return df
         # TODO decide wether to keep this or not
         new_df = pdf.withColumn("_common888column_", lit(0))
         return new_df.groupby('_common888column_').apply(anonymize)
