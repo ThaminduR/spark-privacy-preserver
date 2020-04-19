@@ -19,9 +19,9 @@ A Jupyter notebook can be found here
 
 ## Installation
 
-## Usage
+## Usage - Basic Mondrian
 
-### Basic Mondrian K Anonymity
+### K Anonymity
 
 The `spark.sql.dataframe` you get after anonymizing will always contain a extra column `count` which indicates the number of similar rows. 
 
@@ -61,7 +61,7 @@ your_anonymized_dataframe = Preserver.k_anonymize(df,
 ```
 
 Following code snippet shows how to construct an example schema.
-You need to always consider the count column when constructing the schema. Count column is a integer type column.
+You need to always consider the count column when constructing the schema. Count column is an integer type column.
 
 ```python
 from spark.sql.type import *
@@ -77,3 +77,43 @@ schema = StructType([
 ])
 ```
 
+### L Diversity
+
+Same as the K Anonymity, the `spark.sql.dataframe` you get after anonymizing will always contain a extra column `count` which indicates the number of similar rows.
+
+```python
+from spark_privacy_preserver.mondrian_preserver import Preserver #requires pandas
+
+#df - spark.sql.dataframe - original dataframe
+#k - int - value of the k 
+#l - int - value of the l
+#feature_columns - list - what you want in the output dataframe
+#sensitive_column - string - what you need as senstive attribute 
+#categorical - set -all categorical columns of the original dataframe as a set
+#schema - spark.sql.types StructType - schema of the output dataframe you are expecting
+
+df = spark.read.csv(your_csv_file).toDF('age',
+    'occupation',
+    'race',
+    'sex',
+    'hours-per-week',
+    'income')
+
+categorical = set((
+    'occupation',
+    'sex',
+    'race'
+))
+
+feature_columns = ['age', 'occupation']
+
+sensitive_column = 'income'
+
+your_anonymized_dataframe = Preserver.l_diversity(df,
+                                                k,
+                                                l,
+                                                feature_columns,
+                                                sensitive_column,
+                                                categorical, 
+                                                schema)
+```
