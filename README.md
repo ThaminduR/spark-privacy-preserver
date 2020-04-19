@@ -109,7 +109,7 @@ feature_columns = ['age', 'occupation']
 
 sensitive_column = 'income'
 
-your_anonymized_dataframe = Preserver.k_anonymize(df,
+your_anonymized_dataframe = Preserver.l_diversity(df,
                                                 k,
                                                 l,
                                                 feature_columns,
