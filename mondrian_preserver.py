@@ -32,7 +32,7 @@ class Preserver:
                               sensitive_column, categorical)
             return df
 
-        # TODO decide wether to keep this or not
+        # TODO compare perfomances
         new_df = pdf.withColumn("_common888column_", lit(0))
         return new_df.groupby('_common888column_').apply(anonymize)
 
@@ -46,7 +46,7 @@ class Preserver:
             df = l_diversity(pdf, k, l, feature_columns,
                              sensitive_column, categorical)
             return df
-        # TODO decide wether to keep this or not
+        # TODO compare perfomances
         new_df = pdf.withColumn("_common888column_", lit(0))
         return new_df.groupby('_common888column_').apply(anonymize)
 
