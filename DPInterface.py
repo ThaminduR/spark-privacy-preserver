@@ -1,15 +1,19 @@
-from numbers import Real  # type: ignore
-
 import pandas as pd  # type: ignore
-from pandas import DataFrame  # type: ignore
-from numpy import ndarray  # type: ignore
+import pyspark  # type: ignore
 
 from diffprivlib.mechanisms import LaplaceTruncated  # type: ignore
 from diffprivlib.mechanisms import Binary  # type: ignore
 
 import swifter  # type: ignore
 
-from typing import Dict, TypedDict, Union, Optional  # type: ignore
+# Following imports are purely to provide type checking functionality to the library
+from pandas import DataFrame as PandasDataFrame  # type: ignore
+from pyspark.sql.dataframe import DataFrame as SparkDataFrame
+from pyspark.rdd import RDD
+from numpy import ndarray  # type: ignore
+from numbers import Real  # type: ignore
+from typing import List, Dict, Union, Optional  # type: ignore
+from typing import TypedDict  # type: ignore
 
 
 class Column(TypedDict, total=False):
@@ -69,7 +73,7 @@ class DPInterface:
     def __init__(self,
                  global_epsilon: Union[int, float, None] = None,
                  global_delta: Union[int, float] = 0.0,
-                 df: Optional[DataFrame] = None) -> None:
+                 df: Optional[PandasDataFrame] = None) -> None:
         r""" Inits DPInterface with either epsilon, delta and df or None
 
         Args:
@@ -78,7 +82,7 @@ class DPInterface:
             df: DataFrame to be converted. Can change to a different dataframe with set_df()
         """
 
-        self.df: Optional[DataFrame] = df
+        self.df: Optional[PandasDataFrame] = df
         self.__columns: Dict[str, Column] = {}
 
         self.__epsilon: Optional[float] = None
@@ -143,7 +147,7 @@ class DPInterface:
         return True
 
     @staticmethod
-    def __check_labels(df: DataFrame, column_name: str, label1: Optional[str], label2: Optional[str]) -> bool:
+    def __check_labels(df: PandasDataFrame, column_name: str, label1: Optional[str], label2: Optional[str]) -> bool:
         r""" checks whether labels meet required conditions for method `execute`.
 
         Called only when category = 'boolean'
@@ -231,16 +235,36 @@ class DPInterface:
         if self.__check_sensitivity(sensitivity):
             self.__sensitivity = float(sensitivity)
 
-    def set_df(self, df: DataFrame) -> None:
+    def set_df(self, data: Union[PandasDataFrame, SparkDataFrame, str],
+               engine: str = 'python',
+               encoding: Optional[str] = None,
+               header: Union[int, List[int], None] = None,
+               names: List[str] = None) -> None:
         r""" sets DataFrame object to class.
 
         Multiple DataFrames can be set, but not at same time.
 
         Args:
-            df: DataFrame object
+            header: specific for csv file. performs same as header attribute in pandas.read_csv() method
+            names: specific for csv file. sets column names for pandas columns.
+            encoding: specific for csv file. sets encoding of csv file.
+            engine: specific for csv file. can use different engines to import csv files. default: 'python'
+            data: can be a Pandas DataFrame object, Spark DataFrame object, Spark RDD or CSV file
 
         """
-        self.df = df
+
+        if isinstance(data, PandasDataFrame):
+            data = data
+        elif isinstance(data, SparkDataFrame):
+            data = data.toPandas()
+
+        # TODO: working on RDD
+        elif isinstance(data, RDD):
+            pass
+        elif isinstance(data, str) and data[-4:] == '.csv':
+            data = pd.read_csv(filepath_or_buffer=data, header=header, engine=engine, encoding=encoding, names=names)
+
+        self.df = data
 
     def add_column(self, column_name: str, category: str,
                    epsilon: Union[int, float, None] = None, delta: Union[int, float, None] = None,
