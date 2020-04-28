@@ -23,6 +23,12 @@ def get_spans(df, categorical, partition, scale=None):
         spans[column] = span
     return spans
 
+def get_full_span(df, categorical):
+    for name in df.columns:
+        if name not in categorical:
+            df[name] = pd.to_numeric(df[name])
+
+    return get_spans(df, categorical, df.index)
 
 """
 @PARAMS
@@ -135,9 +141,4 @@ def anonymizer(df, partitions, feature_columns, sensitive_column, categorical, m
     return pdfn
 
 
-def get_full_span(df, categorical):
-    for name in df.columns:
-        if name not in categorical:
-            df[name] = pd.to_numeric(df[name])
 
-    return get_spans(df, categorical, df.index)
