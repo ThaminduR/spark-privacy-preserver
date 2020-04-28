@@ -23,12 +23,14 @@ def get_spans(df, categorical, partition, scale=None):
         spans[column] = span
     return spans
 
+
 def get_full_span(df, categorical):
     for name in df.columns:
         if name not in categorical:
             df[name] = pd.to_numeric(df[name])
 
     return get_spans(df, categorical, df.index)
+
 
 """
 @PARAMS
@@ -69,6 +71,43 @@ def is_l_diverse(df, partition, sensitive_column, l):
 
 """
 @PARAMS
+global_freqs: The global frequencies of the sensitive attribute values
+
+"""
+
+
+def t_closeness(df, partition, column, global_freqs):
+    total_count = float(len(partition))
+    d_max = None
+    group_counts = df.loc[partition].groupby(column)[column].agg('count')
+    for value, count in group_counts.to_dict().items():
+        p = count/total_count
+        d = abs(p-global_freqs[value])
+        if d_max is None or d > d_max:
+            d_max = d
+    return d_max
+
+
+"""
+@PARAMS
+global_freqs: The global frequencies of the sensitive attribute values
+p: The maximum allowed Kolmogorov-Smirnov distance
+"""
+
+
+def is_t_close(df, partition, categorical, sensitive_column, global_freqs, p=0.2):
+
+    if not sensitive_column in categorical:
+        raise ValueError("this method only works for categorical values")
+    result = t_closeness(df, partition, sensitive_column, global_freqs) <= p
+    if(result):
+        return result
+    else:
+        print("No T closseness")
+
+
+"""
+@PARAMS
 df - pandas dataframe
 feature_column - list of column names along which to partitions the dataset
 scale - column spans
@@ -76,7 +115,7 @@ is_valid - function to check the validity of a partition
 """
 
 
-def partition_dataset(df, k, l, categorical, feature_columns, sensitive_column, scale):
+def partition_dataset(df, k, l, t, categorical, feature_columns, sensitive_column, scale):
 
     finished_partitions = []
     partitions = [df.index]
@@ -86,17 +125,32 @@ def partition_dataset(df, k, l, categorical, feature_columns, sensitive_column, 
                           categorical, partition, scale)
         for column, span in sorted(spans.items(), key=lambda x: -x[1]):
             lp, rp = split(df, categorical, partition, column)
-            if l is None:
-                if not is_k_anonymous(lp, k) or not is_k_anonymous(rp, k):
-                    continue
             if l is not None:
                 if not is_k_anonymous(lp, k) or not is_k_anonymous(rp, k) or not is_l_diverse(df, lp, sensitive_column, l) or not is_l_diverse(df, rp, sensitive_column, l):
                     continue
+            if l is None:
+                if t is None:
+                    if not is_k_anonymous(lp, k) or not is_k_anonymous(rp, k):
+                        continue
+                if t is not None:
+                    if not is_k_anonymous(lp, k) or not is_k_anonymous(rp, k) or not is_l_diverse(df, lp, sensitive_column, l) or not is_l_diverse(df, rp, sensitive_column, l):
+                        continue
             partitions.extend((lp, rp))
             break
         else:
             finished_partitions.append(partition)
     return finished_partitions
+
+
+def global_freq(df, sensitive_column):
+    global_freqs = {}
+    total_count = float(len(df))
+    group_counts = df.groupby(sensitive_column)[sensitive_column].agg('count')
+
+    for value, count in group_counts.to_dict().items():
+        p = count/total_count
+        global_freqs[value] = p
+    return global_freq
 
 
 def agg_categorical_column(series):
@@ -119,7 +173,7 @@ def anonymizer(df, partitions, feature_columns, sensitive_column, categorical, m
 
     for i, partition in enumerate(partitions):
         if i % 100 == 1:
-            print("Finished {} partitions.".format(i))
+            print("Finished creating {} partitions.".format(i))
         if max_partitions is not None and i > max_partitions:
             break
         grouped_columns = df.loc[partition].assign(
@@ -139,6 +193,3 @@ def anonymizer(df, partitions, feature_columns, sensitive_column, categorical, m
     dfn = pd.DataFrame(rows)
     pdfn = dfn.sort_values(feature_columns+[sensitive_column])
     return pdfn
-
-
-
