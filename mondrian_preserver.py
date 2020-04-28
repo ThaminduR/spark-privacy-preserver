@@ -32,11 +32,7 @@ class Preserver:
                               sensitive_column, categorical)
             return df
 
-        # TODO compare perfomances
-        new_df = pdf.withColumn("_common888column_", lit(0))
-        return new_df.groupby('_common888column_').apply(anonymize)
-
-        #return pdf.groupby('age').apply(anonymize)
+        return pdf.groupby().apply(anonymize)
 
     @staticmethod
     def l_diversity(pdf, k, l, feature_columns, sensitive_column, categorical, schema):
@@ -46,8 +42,8 @@ class Preserver:
             df = l_diversity(pdf, k, l, feature_columns,
                              sensitive_column, categorical)
             return df
-        # TODO compare perfomances
-        new_df = pdf.withColumn("_common888column_", lit(0))
-        return new_df.groupby('_common888column_').apply(anonymize)
 
-        # return pdf.groupby('_common888column_').apply(anonymize)
+        # TODO compare perfomances
+
+        # new_df = pdf.withColumn("_common888column_", lit(0))
+        return pdf.groupby().apply(anonymize)
