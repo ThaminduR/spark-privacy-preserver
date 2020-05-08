@@ -1,7 +1,6 @@
 
 from pyspark.sql.functions import PandasUDFType, lit, pandas_udf
 from utils.utility import *
-from utils.utility import user_anonymizer
 
 
 def k_anonymizer(df, k, feature_columns, sensitive_column, categorical):

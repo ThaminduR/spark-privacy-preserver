@@ -261,8 +261,8 @@ def anonymizeGivenUser(df, udf, user, usercolumn_name, columns, categorical):
     indexes = list(udf.index)
     for column in columns:
         if column not in categorical:
-            udf[column] =  pd.to_numeric(udf[column])
-            df[column] =  pd.to_numeric(df[column])
+            udf[column] = pd.to_numeric(udf[column])
+            df[column] = pd.to_numeric(df[column])
         valueList = udf[column].unique()
         if column in categorical:
             string = ','.join(valueList)
@@ -274,16 +274,20 @@ def anonymizeGivenUser(df, udf, user, usercolumn_name, columns, categorical):
             mean = sumList/length
             df.loc[indexes, column] = mean
 
-    
     df.loc[indexes, usercolumn_name] = '*'
 
 
-def user_anonymizer(df, k, user, usercolumn_name, sensitive_column, categorical, random):
+class AnonymizeError(Exception):
+    def __init__(self, message):
+        self.message = message
+
+
+def user_anonymizer(df, k, user, usercolumn_name, sensitive_column, categorical, random=False):
     df[usercolumn_name] = df[usercolumn_name].astype(str)
     userdf = df.loc[df[usercolumn_name] == str(user)]
+    user = str(user)
     if(userdf.empty):
-      raise(AnonymizeError("No user found."))
-    print(df.dtypes)
+        raise(AnonymizeError("No user found."))
     rowcount = userdf.shape[0]
     columns = userdf.columns.drop([usercolumn_name, sensitive_column])
     if (rowcount >= k):
@@ -304,7 +308,6 @@ def user_anonymizer(df, k, user, usercolumn_name, sensitive_column, categorical,
                 mean = sumList/length
                 df.loc[df[usercolumn_name] == user, column] = mean
 
-       
         df.loc[df[usercolumn_name] == user, usercolumn_name] = '*'
         print("Anonymization complete !")
 
