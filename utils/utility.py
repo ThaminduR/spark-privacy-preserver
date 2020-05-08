@@ -1,7 +1,15 @@
 import pandas as pd
 
+"""Custom Error class"""
+
+
+class AnonymizeError(Exception):
+    def __init__(self, message):
+        self.message = message
+
+
 """
-@PARAMS
+@PARAMS - get_spans()
 df - pandas dataframe
 partition - parition for whic to calculate the spans
 scale: if given, the spans of each column will be divided 
@@ -33,7 +41,7 @@ def get_full_span(df, categorical):
 
 
 """
-@PARAMS
+@PARAMS - split()
 df - pandas dataframe
 partition - parition for whic to calculate the spans
 column: column to split
@@ -61,16 +69,16 @@ def is_k_anonymous(partition, k):
     return True
 
 
-def diversity(df, partition, column):
+def l_diversity(df, partition, column):
     return len(df[column][partition].unique())
 
 
 def is_l_diverse(df, partition, sensitive_column, l):
-    return diversity(df, partition, sensitive_column) >= l
+    return l_diversity(df, partition, sensitive_column) >= l
 
 
 """
-@PARAMS
+@PARAMS - t_closeness()
 global_freqs: The global frequencies of the sensitive attribute values
 
 """
@@ -89,16 +97,16 @@ def t_closeness(df, partition, column, global_freqs):
 
 
 """
-@PARAMS
+@PARAMS - is_t_close()
 global_freqs: The global frequencies of the sensitive attribute values
-p: The maximum allowed Kolmogorov-Smirnov distance
+p: The maximum aloowed distance
 """
 
 
-def is_t_close(df, partition, categorical, sensitive_column, global_freqs, p=0.2):
+def is_t_close(df, partition, categorical, sensitive_column, global_freqs, p):
 
     if not sensitive_column in categorical:
-        raise ValueError("this method only works for categorical values")
+        raise ValueError("T closeness is only for categorical values")
     result = t_closeness(df, partition, sensitive_column, global_freqs) <= p
     if(result):
         return result
@@ -106,18 +114,32 @@ def is_t_close(df, partition, categorical, sensitive_column, global_freqs, p=0.2
         print("No T closseness")
 
 
+def get_global_freq(df, sensitive_column):
+    global_freqs = {}
+    total_count = float(len(df))
+    group_counts = df.groupby(sensitive_column)[sensitive_column].agg('count')
+
+    for value, count in group_counts.to_dict().items():
+        p = count/total_count
+        global_freqs[value] = p
+    return global_freqs
+
+
 """
-@PARAMS
+@PARAMS - partition_dataset()
 df - pandas dataframe
 feature_column - list of column names along which to partitions the dataset
 scale - column spans
-is_valid - function to check the validity of a partition
 """
 
 
 def partition_dataset(df, k, l, t, categorical, feature_columns, sensitive_column, scale):
 
     finished_partitions = []
+    global_freqs = {}
+    if t is not None:
+        global_freqs = get_global_freq(df, sensitive_column)
+
     partitions = [df.index]
     while partitions:
         partition = partitions.pop(0)
@@ -133,24 +155,13 @@ def partition_dataset(df, k, l, t, categorical, feature_columns, sensitive_colum
                     if not is_k_anonymous(lp, k) or not is_k_anonymous(rp, k):
                         continue
                 if t is not None:
-                    if not is_k_anonymous(lp, k) or not is_k_anonymous(rp, k) or not is_l_diverse(df, lp, sensitive_column, l) or not is_l_diverse(df, rp, sensitive_column, l):
+                    if not is_k_anonymous(lp, k) or not is_k_anonymous(rp, k) or not is_t_close(df, lp, categorical, sensitive_column, global_freqs, t) or not is_t_close(df, rp, categorical, sensitive_column, global_freqs, t):
                         continue
             partitions.extend((lp, rp))
             break
         else:
             finished_partitions.append(partition)
     return finished_partitions
-
-
-def global_freq(df, sensitive_column):
-    global_freqs = {}
-    total_count = float(len(df))
-    group_counts = df.groupby(sensitive_column)[sensitive_column].agg('count')
-
-    for value, count in group_counts.to_dict().items():
-        p = count/total_count
-        global_freqs[value] = p
-    return global_freq
 
 
 def agg_categorical_column(series):
@@ -173,7 +184,7 @@ def anonymizer(df, partitions, feature_columns, sensitive_column, categorical, m
 
     for i, partition in enumerate(partitions):
         if i % 100 == 1:
-            print("Finished creating {} partitions.".format(i))
+            print("Finished processing {} partitions.".format(i))
         if max_partitions is not None and i > max_partitions:
             break
         grouped_columns = df.loc[partition].assign(
@@ -193,3 +204,122 @@ def anonymizer(df, partitions, feature_columns, sensitive_column, categorical, m
     dfn = pd.DataFrame(rows)
     pdfn = dfn.sort_values(feature_columns+[sensitive_column])
     return pdfn
+
+
+""" --------------------------------------------------------------------------"""
+""" --------------------------------------------------------------------------"""
+
+
+def getIntersection(df, udf, user, threshold, columns, usercolumn_name):
+    i = 0
+    intersect_df = pd.DataFrame()
+    for column in columns:
+        i += 1
+        if (i > threshold):
+            break
+        val = udf[column].value_counts().idxmax()
+        tempdf = df.loc[(df[column] == val) & (df[usercolumn_name] != user)]
+        if (intersect_df.empty):
+            intersect_df = tempdf
+        if(not tempdf.empty):
+            intersect_df = tempdf.reset_index().merge(
+                intersect_df, how='inner').set_index('index')
+
+    return intersect_df
+
+
+def commonDF(df, udf, user, requiredRows, columns, usercolumn_name, random):
+    length = len(columns)
+    for i in range(length):
+        intersect_df = getIntersection(
+            df, udf, user, length-i, columns, usercolumn_name)
+        if(intersect_df.shape[0] >= requiredRows):
+            break
+        else:
+            print("'Multiple columns' row search - iteration ", i+1)
+            continue
+
+    if (intersect_df.shape[0] < requiredRows):
+        print("'Multiple columns' row search returned an insufficient dataframe.")
+        print("Trying 'single column' row search ...")
+        for column in columns:
+            intersect_df = getIntersection(
+                df, udf, user, 1, [column], usercolumn_name)
+            if(intersect_df.shape[0] >= requiredRows):
+                break
+    if ((intersect_df.shape[0] < requiredRows) & random):
+        print("'Single columns' row search returned an insufficient dataframe.")
+        print("Random flag is set to True. Selecting random rows ...")
+        try:
+            intersect_df = df.sample(requiredRows)
+        except ValueError:
+            raise(AnonymizeError("Data frame is not enough for anonymization"))
+    return intersect_df
+
+
+def anonymizeGivenUser(df, udf, user, usercolumn_name, columns, categorical):
+    indexes = list(udf.index)
+    for column in columns:
+        if column not in categorical:
+            udf[column] =  pd.to_numeric(udf[column])
+            df[column] =  pd.to_numeric(df[column])
+        valueList = udf[column].unique()
+        if column in categorical:
+            string = ','.join(valueList)
+            df[column] = df[column].astype(str)
+            df.loc[indexes, column] = string
+        if column not in categorical:
+            length = len(valueList)
+            sumList = sum(valueList)
+            mean = sumList/length
+            df.loc[indexes, column] = mean
+
+    
+    df.loc[indexes, usercolumn_name] = '*'
+
+
+def user_anonymizer(df, k, user, usercolumn_name, sensitive_column, categorical, random):
+    df[usercolumn_name] = df[usercolumn_name].astype(str)
+    userdf = df.loc[df[usercolumn_name] == str(user)]
+    if(userdf.empty):
+      raise(AnonymizeError("No user found."))
+    print(df.dtypes)
+    rowcount = userdf.shape[0]
+    columns = userdf.columns.drop([usercolumn_name, sensitive_column])
+    if (rowcount >= k):
+
+        print("K group selected. Anonymizing ..")
+        for column in columns:
+            if column not in categorical:
+                userdf[column] =  pd.to_numeric(userdf[column])
+                df[column] =  pd.to_numeric(df[column])
+            valueList = userdf[column].unique()
+            if column in categorical:
+                string = ','.join(valueList)
+                df[column] = df[column].astype(str)
+                df.loc[df[usercolumn_name] == user, column] = string
+            if column not in categorical:
+                length = len(valueList)
+                sumList = sum(valueList)
+                mean = sumList/length
+                df.loc[df[usercolumn_name] == user, column] = mean
+
+       
+        df.loc[df[usercolumn_name] == user, usercolumn_name] = '*'
+        print("Anonymization complete !")
+
+    else:
+        print("Trying to increase the rows in K group")
+
+        requiredRows = k - rowcount
+        intersect_df = commonDF(
+            df, userdf, user, requiredRows, columns, usercolumn_name, random)
+
+        if((not intersect_df.empty) & (intersect_df.shape[0] >= requiredRows)):
+            finaldf = pd.concat([userdf, intersect_df])
+            anonymizeGivenUser(df, finaldf, user,
+                               usercolumn_name, columns, categorical)
+            print("Anonymization complete !")
+        else:
+            raise(AnonymizeError("Can't K Anonymize the user for given K value"))
+    return df
