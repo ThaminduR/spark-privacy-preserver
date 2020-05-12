@@ -1,6 +1,7 @@
+import hashlib
 import pandas as pd
 
-"""Custom Error class"""
+# """Custom Error class"""
 
 
 class AnonymizeError(Exception):
@@ -8,13 +9,13 @@ class AnonymizeError(Exception):
         self.message = message
 
 
-"""
-@PARAMS - get_spans()
-df - pandas dataframe
-partition - parition for whic to calculate the spans
-scale: if given, the spans of each column will be divided 
-        by the scale for that column
-"""
+# """
+# @PARAMS - get_spans()
+# df - pandas dataframe
+# partition - parition for whic to calculate the spans
+# scale: if given, the spans of each column will be divided
+#         by the scale for that column
+# """
 
 
 def get_spans(df, categorical, partition, scale=None):
@@ -40,12 +41,12 @@ def get_full_span(df, categorical):
     return get_spans(df, categorical, df.index)
 
 
-"""
-@PARAMS - split()
-df - pandas dataframe
-partition - parition for whic to calculate the spans
-column: column to split
-"""
+# """
+# @PARAMS - split()
+# df - pandas dataframe
+# partition - parition for whic to calculate the spans
+# column: column to split
+# """
 
 
 def split(df, categorical, partition, column):
@@ -77,11 +78,11 @@ def is_l_diverse(df, partition, sensitive_column, l):
     return l_diversity(df, partition, sensitive_column) >= l
 
 
-"""
-@PARAMS - t_closeness()
-global_freqs: The global frequencies of the sensitive attribute values
+# """
+# @PARAMS - t_closeness()
+# global_freqs: The global frequencies of the sensitive attribute values
 
-"""
+# """
 
 
 def t_closeness(df, partition, column, global_freqs):
@@ -96,11 +97,11 @@ def t_closeness(df, partition, column, global_freqs):
     return d_max
 
 
-"""
-@PARAMS - is_t_close()
-global_freqs: The global frequencies of the sensitive attribute values
-p: The maximum aloowed distance
-"""
+# """
+# @PARAMS - is_t_close()
+# global_freqs: The global frequencies of the sensitive attribute values
+# p: The maximum aloowed distance
+# """
 
 
 def is_t_close(df, partition, categorical, sensitive_column, global_freqs, p):
@@ -125,12 +126,10 @@ def get_global_freq(df, sensitive_column):
     return global_freqs
 
 
-"""
-@PARAMS - partition_dataset()
-df - pandas dataframe
-feature_column - list of column names along which to partitions the dataset
-scale - column spans
-"""
+# @PARAMS - partition_dataset()
+# df - pandas dataframe
+# feature_column - list of column names along which to partitions the dataset
+# scale - column spans
 
 
 def partition_dataset(df, k, l, t, categorical, feature_columns, sensitive_column, scale):
@@ -169,7 +168,26 @@ def agg_categorical_column(series):
 
 
 def agg_numerical_column(series):
-    return series.mean()
+    minimum = series.min()
+    maximum = series.max()
+    if(maximum == minimum):
+        string = str(maximum)
+    else:
+        string = ''
+        maxm = str(maximum)
+        minm = str(minimum)
+        min_start = minm[-2]
+        max_start = maxm[-2]
+        if(minimum >= int(min_start+'5')):
+            string = min_start+'5-'
+        else:
+            string = min_start+'0-'
+  
+        if(maximum >= int(max_start+'5')):
+                string += str(int(max_start+'0') +10)
+        else:
+            string += max_start+'5'
+    return string
 
 
 def anonymizer(df, partitions, feature_columns, sensitive_column, categorical, max_partitions=None):
@@ -202,12 +220,13 @@ def anonymizer(df, partitions, feature_columns, sensitive_column, categorical, m
             })
             rows.append(values.copy())
     dfn = pd.DataFrame(rows)
-    pdfn = dfn.sort_values(feature_columns+[sensitive_column])
-    return pdfn
+    # pdfn = dfn.sort_values(feature_columns+[sensitive_column])
+    return dfn
 
 
-""" --------------------------------------------------------------------------"""
-""" --------------------------------------------------------------------------"""
+# """ --------------------------------------------------------------------------
+    # Single User Anonymize
+# """ --------------------------------------------------------------------------
 
 
 def getIntersection(df, udf, user, threshold, columns, usercolumn_name):
@@ -272,9 +291,15 @@ def anonymizeGivenUser(df, udf, user, usercolumn_name, columns, categorical):
             length = len(valueList)
             sumList = sum(valueList)
             mean = sumList/length
-            df.loc[indexes, column] = mean
 
-    df.loc[indexes, usercolumn_name] = '*'
+            minval = min(valueList)
+            maxval = max(valueList)
+            valrange = str(minval)+"-"+str(maxval)
+
+            df[column] = df[column].astype(str)
+            df.loc[indexes, column] = valrange
+
+    # df.loc[indexes, usercolumn_name] = '*'
 
 
 class AnonymizeError(Exception):
@@ -283,7 +308,12 @@ class AnonymizeError(Exception):
 
 
 def user_anonymizer(df, k, user, usercolumn_name, sensitive_column, categorical, random=False):
+
     df[usercolumn_name] = df[usercolumn_name].astype(str)
+
+    # df[usercolumn_name].apply(hashlib.sha1(str.encode()).hexdigest())
+    # user = hashlib.sha1(str.encode()).hexdigest()
+    
     userdf = df.loc[df[usercolumn_name] == str(user)]
     user = str(user)
     if(userdf.empty):
@@ -295,8 +325,8 @@ def user_anonymizer(df, k, user, usercolumn_name, sensitive_column, categorical,
         print("K group selected. Anonymizing ..")
         for column in columns:
             if column not in categorical:
-                userdf[column] =  pd.to_numeric(userdf[column])
-                df[column] =  pd.to_numeric(df[column])
+                userdf[column] = pd.to_numeric(userdf[column])
+                df[column] = pd.to_numeric(df[column])
             valueList = userdf[column].unique()
             if column in categorical:
                 string = ','.join(valueList)
@@ -306,9 +336,15 @@ def user_anonymizer(df, k, user, usercolumn_name, sensitive_column, categorical,
                 length = len(valueList)
                 sumList = sum(valueList)
                 mean = sumList/length
-                df.loc[df[usercolumn_name] == user, column] = mean
 
-        df.loc[df[usercolumn_name] == user, usercolumn_name] = '*'
+                minval = min(valueList)
+                maxval = max(valueList)
+                valrange = str(minval)+"-"+str(maxval)
+
+                df[column] = df[column].astype(str)
+                df.loc[df[usercolumn_name] == user, column] = valrange
+
+        # df.loc[df[usercolumn_name] == user, usercolumn_name] = '*'
         print("Anonymization complete !")
 
     else:
