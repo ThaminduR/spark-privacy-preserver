@@ -164,10 +164,10 @@ your_anonymized_dataframe = Preserver.t_closeness(df,
 
 ```
 
-### K Anonymity wihtout row suppresion
+### K Anonymity without row suppresion
 
-This function provides a simple way to anonymize a dataset as it is.
-This doesn't return a dataframe with count variable instead it returns the same dataframe, k-anonymized. Return type of all the non categorical columns will be string.
+This function provides a simple way to anonymize a dataset without grouping the rows.
+This function doesn't return a dataframe with the count variable as previous fnctions. Instead it returns the same dataframe, k-anonymized. Return type of all the non categorical columns will be string.
 User attribute column _should not_ be given as a feature column and its return type will be same as the input type.
 
 ```python
@@ -212,7 +212,7 @@ your_anonymized_dataframe = Preserver.k_anonymize_w_user(df,
 ### Single User K Anonymity
 
 This function provides a simple way to anonymize a given user in a dataset. Even though this doesn't use the mondrian algorithm, function is included in the `mondrian_preserver`. User identification attribute and the column name of the user identification atribute is needed as parameters.
-This doesn't return a dataframe with count variable instead it returns the same dataframe, anonymized for the given user. Return type of user column and all the non categorical columns will be string.
+This doesn't return a dataframe with count variable. Instead this returns the same dataframe, anonymized for the given user. Return type of user column and all the non categorical columns will be string.
 
 ```python
 from spark_privacy_preserver.mondrian_preserver import Preserver #requires pandas
