@@ -81,10 +81,10 @@ schema = StructType([
 
 ### K Anonymity (without row suppresion)
 
-This function provides a simple way to anonymize a dataset which has a user identification attribute without grouping the rows.
-This function doesn't return a dataframe with the count variable as above fnction. Instead it returns the same dataframe, k-anonymized. Return type of all the non categorical columns will be string.
-User attribute column _should not_ be given as a feature column and its return type will be same as the input type.
-Function takes exact same parameters as the above function. To use this method to anonymize the dataset, instead of calling `k_anonymize`, call `k_anonymize_w_user`
+This function provides a simple way to anonymize a dataset which has a user identification attribute without grouping the rows.    
+This function doesn't return a dataframe with the count variable as above function. Instead it returns the same dataframe, k-anonymized. Return type of all the non categorical columns will be string.   
+User attribute column **must not** be given as a feature column and its return type will be same as the input type.   
+Function takes exact same parameters as the above function. To use this method to anonymize the dataset, instead of calling `k_anonymize`, call `k_anonymize_w_user`.    
 
 ### L Diversity
 
@@ -130,10 +130,10 @@ your_anonymized_dataframe = Preserver.l_diversity(df,
 
 ### L Diversity (without row suppresion)
 
-This function provides a simple way to anonymize a dataset which has a user identification attribute without grouping the rows.
-This function doesn't return a dataframe with the count variable as above fnction. Instead it returns the same dataframe, l-diversity anonymized. Return type of all the non categorical columns will be string.
-User attribute column _should not_ be given as a feature column and its return type will be same as the input type.
-Function takes exact same parameters as the above function. To use this method to anonymize the dataset, instead of calling `l_diversity`, call `l_diversity_w_user`
+This function provides a simple way to anonymize a dataset which has a user identification attribute without grouping the rows.   
+This function doesn't return a dataframe with the count variable as above function. Instead it returns the same dataframe, l-diversity anonymized. Return type of all the non categorical columns will be string.    
+User attribute column **must not** be given as a feature column and its return type will be same as the input type.   
+Function takes exact same parameters as the above function. To use this method to anonymize the dataset, instead of calling `l_diversity`, call `l_diversity_w_user`.  
 
 ### T - Closeness
 
@@ -180,14 +180,14 @@ your_anonymized_dataframe = Preserver.t_closeness(df,
 
 ### T Closeness (without row suppresion)
 
-This function provides a simple way to anonymize a dataset which has a user identification attribute without grouping the rows.
-This function doesn't return a dataframe with the count variable as above fnction. Instead it returns the same dataframe, t-closeness anonymized. Return type of all the non categorical columns will be string.
-User attribute column _should not_ be given as a feature column and its return type will be same as the input type.
-Function takes exact same parameters as the above function. To use this method to anonymize the dataset, instead of calling `t_closeness`, call `t_closeness_w_user`
+This function provides a simple way to anonymize a dataset which has a user identification attribute without grouping the rows.  
+This function doesn't return a dataframe with the count variable as above function. Instead it returns the same dataframe, t-closeness anonymized. Return type of all the non categorical columns will be string.   
+User attribute column **must not** be given as a feature column and its return type will be same as the input type.   
+Function takes exact same parameters as the above function. To use this method to anonymize the dataset, instead of calling `t_closeness`, call `t_closeness_w_user`.  
 
 ### Single User K Anonymity
 
-This function provides a simple way to anonymize a given user in a dataset. Even though this doesn't use the mondrian algorithm, function is included in the `mondrian_preserver`. User identification attribute and the column name of the user identification atribute is needed as parameters.
+This function provides a simple way to anonymize a given user in a dataset. Even though this doesn't use the mondrian algorithm, function is included in the `mondrian_preserver`. User identification attribute and the column name of the user identification atribute is needed as parameters.   
 This doesn't return a dataframe with count variable. Instead this returns the same dataframe, anonymized for the given user. Return type of user column and all the non categorical columns will be string.
 
 ```python
