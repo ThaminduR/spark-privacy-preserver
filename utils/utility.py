@@ -182,9 +182,9 @@ def agg_numerical_column(series):
             string = min_start+'5-'
         else:
             string = min_start+'0-'
-  
+
         if(maximum >= int(max_start+'5')):
-                string += str(int(max_start+'0') +10)
+            string += str(int(max_start+'0') + 10)
         else:
             string += max_start+'5'
     return string
@@ -220,8 +220,8 @@ def anonymizer(df, partitions, feature_columns, sensitive_column, categorical, m
             })
             rows.append(values.copy())
     dfn = pd.DataFrame(rows)
-    # pdfn = dfn.sort_values(feature_columns+[sensitive_column])
-    return dfn
+    pdfn = dfn.sort_values(feature_columns+[sensitive_column])
+    return pdfn
 
 
 # """ --------------------------------------------------------------------------
@@ -255,20 +255,25 @@ def commonDF(df, udf, user, requiredRows, columns, usercolumn_name, random):
         if(intersect_df.shape[0] >= requiredRows):
             break
         else:
-            print("'Multiple columns' row search - iteration ", i+1)
+            continue
+
+    revcolumn = columns[::-1]
+
+    for i in range(length):
+        intersect_df = getIntersection(
+            df, udf, user, length-i, revcolumn, usercolumn_name)
+        if(intersect_df.shape[0] >= requiredRows):
+            break
+        else:
             continue
 
     if (intersect_df.shape[0] < requiredRows):
-        print("'Multiple columns' row search returned an insufficient dataframe.")
-        print("Trying 'single column' row search ...")
         for column in columns:
             intersect_df = getIntersection(
                 df, udf, user, 1, [column], usercolumn_name)
             if(intersect_df.shape[0] >= requiredRows):
                 break
     if ((intersect_df.shape[0] < requiredRows) & random):
-        print("'Single columns' row search returned an insufficient dataframe.")
-        print("Random flag is set to True. Selecting random rows ...")
         try:
             intersect_df = df.sample(requiredRows)
         except ValueError:
@@ -288,77 +293,129 @@ def anonymizeGivenUser(df, udf, user, usercolumn_name, columns, categorical):
             df[column] = df[column].astype(str)
             df.loc[indexes, column] = string
         if column not in categorical:
-            length = len(valueList)
-            sumList = sum(valueList)
-            mean = sumList/length
 
-            minval = min(valueList)
-            maxval = max(valueList)
-            valrange = str(minval)+"-"+str(maxval)
+            minimum = min(valueList)
+            maximum = max(valueList)
+            if(maximum == minimum):
+                string = str(maximum)
+            else:
+                string = ''
+                maxm = str(maximum)
+                minm = str(minimum)
+                min_start = minm[-2]
+                max_start = maxm[-2]
+                if(minimum >= int(min_start+'5')):
+                    string = min_start+'5-'
+                else:
+                    string = min_start+'0-'
+
+                if(maximum >= int(max_start+'5')):
+                    string += str(int(max_start+'0') + 10)
+                else:
+                    string += max_start+'5'
 
             df[column] = df[column].astype(str)
-            df.loc[indexes, column] = valrange
-
-    # df.loc[indexes, usercolumn_name] = '*'
-
-
-class AnonymizeError(Exception):
-    def __init__(self, message):
-        self.message = message
+            df.loc[indexes, column] = string
 
 
 def user_anonymizer(df, k, user, usercolumn_name, sensitive_column, categorical, random=False):
 
+    if ((sensitive_column not in df.columns) or (usercolumn_name not in df.columns)):
+        raise AnonymizeError("No Such Sensitive Column")
+
     df[usercolumn_name] = df[usercolumn_name].astype(str)
 
-    # df[usercolumn_name].apply(hashlib.sha1(str.encode()).hexdigest())
-    # user = hashlib.sha1(str.encode()).hexdigest()
-    
     userdf = df.loc[df[usercolumn_name] == str(user)]
     user = str(user)
     if(userdf.empty):
-        raise(AnonymizeError("No user found."))
+        raise AnonymizeError("No user found.")
+
     rowcount = userdf.shape[0]
     columns = userdf.columns.drop([usercolumn_name, sensitive_column])
+
     if (rowcount >= k):
-
-        print("K group selected. Anonymizing ..")
-        for column in columns:
-            if column not in categorical:
-                userdf[column] = pd.to_numeric(userdf[column])
-                df[column] = pd.to_numeric(df[column])
-            valueList = userdf[column].unique()
-            if column in categorical:
-                string = ','.join(valueList)
-                df[column] = df[column].astype(str)
-                df.loc[df[usercolumn_name] == user, column] = string
-            if column not in categorical:
-                length = len(valueList)
-                sumList = sum(valueList)
-                mean = sumList/length
-
-                minval = min(valueList)
-                maxval = max(valueList)
-                valrange = str(minval)+"-"+str(maxval)
-
-                df[column] = df[column].astype(str)
-                df.loc[df[usercolumn_name] == user, column] = valrange
-
-        # df.loc[df[usercolumn_name] == user, usercolumn_name] = '*'
-        print("Anonymization complete !")
-
+        requiredRows = 1
     else:
-        print("Trying to increase the rows in K group")
-
         requiredRows = k - rowcount
-        intersect_df = commonDF(
-            df, userdf, user, requiredRows, columns, usercolumn_name, random)
+    intersect_df = commonDF(
+        df, userdf, user, requiredRows, columns, usercolumn_name, random)
 
-        if((not intersect_df.empty) & (intersect_df.shape[0] >= requiredRows)):
-            finaldf = pd.concat([userdf, intersect_df])
-            anonymizeGivenUser(df, finaldf, user,
-                               usercolumn_name, columns, categorical)
-            print("Anonymization complete !")
+    if((not intersect_df.empty) & (intersect_df.shape[0] >= requiredRows)):
+        finaldf = pd.concat([userdf, intersect_df])
+        anonymizeGivenUser(df, finaldf, user,
+                           usercolumn_name, columns, categorical)
+    else:
+        raise(AnonymizeError("Can't K Anonymize the user for given K value"))
+    return df
+
+
+# """ --------------------------------------------------------------------------
+    # K Anonymize with all rows
+# """ --------------------------------------------------------------------------
+def agg_columns(df, partdf, indexes, columns, categorical):
+
+    for column in columns:
+
+        if column not in categorical:
+            partdf[column] = pd.to_numeric(partdf[column])
+        valueList = partdf[column].unique()
+
+        if column in categorical:
+            string = ','.join(valueList)
+            df[column] = df[column].astype(str)
+            df.loc[indexes, column] = string
+
+        if column not in categorical:
+            minimum = min(valueList)
+            maximum = max(valueList)
+            if(maximum == minimum):
+                string = str(maximum)
+            else:
+                string = ''
+                maxm = str(maximum)
+                minm = str(minimum)
+                min_start = minm[-2]
+                max_start = maxm[-2]
+                if(minimum >= int(min_start+'5')):
+                    string = min_start+'5-'
+                else:
+                    string = min_start+'0-'
+
+                if(maximum >= int(max_start+'5')):
+                    string += str(int(max_start+'0') + 10)
+                else:
+                    string += max_start+'5'
+
+            df[column] = df[column].astype(str)
+            df.loc[indexes, column] = string
+
+
+def anonymize_w_user(df, k, feature_columns, sensitive_column, categorical):
+
+    if sensitive_column not in df.columns:
+        raise AnonymizeError("No Such Sensitive Column")
+
+    for fcolumn in feature_columns:
+        if fcolumn not in df.columns:
+            raise AnonymizeError("No Such Feature Column :"+fcolumn)
+
+    full_spans = get_full_span(df, categorical)
+    partitions = partition_dataset(
+        df, k, None, None,  categorical, feature_columns, sensitive_column, full_spans)
+    aggregations = {}
+    df_copy = df.copy()
+    for column in feature_columns:
+        if column in categorical:
+            aggregations[column] = agg_categorical_column
         else:
-            raise(AnonymizeError("Can't K Anonymize the user for given K value"))
+            aggregations[column] = agg_numerical_column
+
+    for i, partition in enumerate(partitions):
+        if i % 100 == 1:
+            print("Finished processing {} partitions.".format(i))
+
+        partdf = df.loc[partition]
+        agg_columns(df, partdf, partition, feature_columns, categorical)
+
+    df = df.sort_values(feature_columns+[sensitive_column])
     return df

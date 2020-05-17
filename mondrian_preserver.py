@@ -5,6 +5,13 @@ from utils.utility import *
 
 def k_anonymizer(df, k, feature_columns, sensitive_column, categorical):
 
+    if sensitive_column not in df.columns:
+        raise AnonymizeError("No Such Sensitive Column")
+
+    for fcolumn in feature_columns:
+        if fcolumn not in df.columns:
+            raise AnonymizeError("No Such Feature Column :"+fcolumn)
+
     full_spans = get_full_span(df, categorical)
     partitions = partition_dataset(
         df, k, None, None,  categorical, feature_columns, sensitive_column, full_spans)
@@ -14,6 +21,13 @@ def k_anonymizer(df, k, feature_columns, sensitive_column, categorical):
 
 def l_diversity_anonymizer(df, k, l, feature_columns, sensitive_column, categorical):
 
+    if sensitive_column not in df.columns:
+        raise AnonymizeError("No Such Sensitive Column")
+
+    for fcolumn in feature_columns:
+        if fcolumn not in df.columns:
+            raise AnonymizeError("No Such Feature Column :"+fcolumn)
+
     full_spans = get_full_span(df, categorical)
     partitions = partition_dataset(
         df, k, l, None,  categorical, feature_columns, sensitive_column, full_spans)
@@ -22,6 +36,14 @@ def l_diversity_anonymizer(df, k, l, feature_columns, sensitive_column, categori
 
 
 def t_closeness_anonymizer(df, k, t, feature_columns, sensitive_column, categorical):
+
+    if sensitive_column not in df.columns:
+        raise AnonymizeError("No Such Sensitive Column")
+
+    for fcolumn in feature_columns:
+        if fcolumn not in df.columns:
+            raise AnonymizeError("No Such Feature Column :"+fcolumn)
+
     full_spans = get_full_span(df, categorical)
     partitions = partition_dataset(
         df, k, None, t,  categorical, feature_columns, sensitive_column, full_spans)
@@ -71,6 +93,17 @@ class Preserver:
         def anonymize(pdf):
             a_df = user_anonymizer(
                 pdf, k, user, usercolumn_name, sensitive_column, categorical, random)
+            return a_df
+
+        return df.groupby().apply(anonymize)
+
+    @staticmethod
+    def k_anonymize_w_user(df, k, feature_columns, sensitive_column, categorical, schema):
+
+        @pandas_udf(schema, PandasUDFType.GROUPED_MAP)
+        def anonymize(pdf):
+            a_df = anonymize_w_user(
+                pdf, k, feature_columns, sensitive_column, categorical)
             return a_df
 
         return df.groupby().apply(anonymize)
