@@ -79,6 +79,13 @@ schema = StructType([
 ])
 ```
 
+### K Anonymity (without row suppresion)
+
+This function provides a simple way to anonymize a dataset which has a user identification attribute without grouping the rows.
+This function doesn't return a dataframe with the count variable as above fnction. Instead it returns the same dataframe, k-anonymized. Return type of all the non categorical columns will be string.
+User attribute column _should not_ be given as a feature column and its return type will be same as the input type.
+Function takes exact same parameters as the above function. To use this method to anonymize the dataset, instead of calling `k_anonymize`, call `k_anonymize_w_user`
+
 ### L Diversity
 
 Same as the K Anonymity, the `spark.sql.dataframe` you get after anonymizing will always contain a extra column `count` which indicates the number of similar rows.
@@ -120,6 +127,13 @@ your_anonymized_dataframe = Preserver.l_diversity(df,
                                                 categorical,
                                                 schema)
 ```
+
+### L Diversity (without row suppresion)
+
+This function provides a simple way to anonymize a dataset which has a user identification attribute without grouping the rows.
+This function doesn't return a dataframe with the count variable as above fnction. Instead it returns the same dataframe, l-diversity anonymized. Return type of all the non categorical columns will be string.
+User attribute column _should not_ be given as a feature column and its return type will be same as the input type.
+Function takes exact same parameters as the above function. To use this method to anonymize the dataset, instead of calling `l_diversity`, call `l_diversity_w_user`
 
 ### T - Closeness
 
@@ -164,50 +178,12 @@ your_anonymized_dataframe = Preserver.t_closeness(df,
 
 ```
 
-### K Anonymity without row suppresion
+### T Closeness (without row suppresion)
 
-This function provides a simple way to anonymize a dataset without grouping the rows.
-This function doesn't return a dataframe with the count variable as previous fnctions. Instead it returns the same dataframe, k-anonymized. Return type of all the non categorical columns will be string.
+This function provides a simple way to anonymize a dataset which has a user identification attribute without grouping the rows.
+This function doesn't return a dataframe with the count variable as above fnction. Instead it returns the same dataframe, t-closeness anonymized. Return type of all the non categorical columns will be string.
 User attribute column _should not_ be given as a feature column and its return type will be same as the input type.
-
-```python
-from spark_privacy_preserver.mondrian_preserver import Preserver #requires pandas
-
-#df - spark.sql.dataframe - original dataframe
-#k - int - value of the k
-#feature_columns - list - what you want in the output dataframe
-#sensitive_column - string - what you need as senstive attribute
-#categorical - set -all categorical columns of the original dataframe as a set
-#schema - spark.sql.types StructType - schema of the output dataframe you are expecting
-
-
-df = spark.read.csv(your_csv_file).toDF('name',
-    'age',
-    'occupation',
-    'race',
-    'sex',
-    'hours-per-week',
-    'income')
-
-categorical = set((
-    'occupation',
-    'sex',
-    'race'
-))
-
-feature_columns = ['age', 'occupation']
-
-sensitive_column = 'income'
-
-
-your_anonymized_dataframe = Preserver.k_anonymize_w_user(df,
-                                                k,
-                                                feature_columns,
-                                                sensitive_column,
-                                                categorical,
-                                                schema)
-
-```
+Function takes exact same parameters as the above function. To use this method to anonymize the dataset, instead of calling `t_closeness`, call `t_closeness_w_user`
 
 ### Single User K Anonymity
 

@@ -350,7 +350,7 @@ def user_anonymizer(df, k, user, usercolumn_name, sensitive_column, categorical,
 
 
 # """ --------------------------------------------------------------------------
-    # K Anonymize with all rows
+    # Anonymize with all rows
 # """ --------------------------------------------------------------------------
 def agg_columns(df, partdf, indexes, columns, categorical):
 
@@ -390,7 +390,7 @@ def agg_columns(df, partdf, indexes, columns, categorical):
             df.loc[indexes, column] = string
 
 
-def anonymize_w_user(df, k, feature_columns, sensitive_column, categorical):
+def anonymize_w_user(df, partitions, feature_columns, sensitive_column, categorical):
 
     if sensitive_column not in df.columns:
         raise AnonymizeError("No Such Sensitive Column")
@@ -400,8 +400,6 @@ def anonymize_w_user(df, k, feature_columns, sensitive_column, categorical):
             raise AnonymizeError("No Such Feature Column :"+fcolumn)
 
     full_spans = get_full_span(df, categorical)
-    partitions = partition_dataset(
-        df, k, None, None,  categorical, feature_columns, sensitive_column, full_spans)
     aggregations = {}
     df_copy = df.copy()
     for column in feature_columns:
