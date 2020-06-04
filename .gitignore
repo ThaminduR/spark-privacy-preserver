@@ -1,8 +1,6 @@
-testlibrary.py
-testlibrary-small.py
-testlibrary-nodobo.py
+mondrian_tests/
 __pycache__/
-test/
+mondrian_tests/
 utils/__pycache__/
 test.md
-data/calls.csv
+data/
