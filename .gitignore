@@ -1,10 +1,7 @@
 .idea
 backup.py
-cars.csv
-data_11kb.csv
 data_53000kb.csv
-diffprivlib_docs.pdf
-diffprivlib_overview.pdf
 test.ipynb
 .mypy_cache
-hello.txt
+env
+experiment.ipynb
