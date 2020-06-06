@@ -1,4 +1,3 @@
-# Following imports provide basic functionality to the library
 from pyspark.sql.functions import udf  # type: ignore
 from pyspark.sql.types import DoubleType, StringType  # type: ignore
 
@@ -334,7 +333,6 @@ class DPLib:
 
         self.__columns[str(column_name)] = column
 
-    # must be spark_udf function
     def execute(self):
         r"""
 

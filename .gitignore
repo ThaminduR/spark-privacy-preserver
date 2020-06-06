@@ -1,7 +1,7 @@
 .idea
-backup.py
 data_53000kb.csv
 test.ipynb
 .mypy_cache
 env
 experiment.ipynb
+backup.py
