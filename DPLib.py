@@ -59,7 +59,7 @@ class DPLib:
         execute: changes existing sdf to be differentially private. This change is not reversible.
 
     Examples:
-        # TODO: add an `examples` jupyter notebook
+        Check out the example.ipynb Jupyter notebook
 
     """
 
@@ -72,7 +72,7 @@ class DPLib:
         Args:
             global_epsilon: Common epsilon value to be used by all columns as a fail-safe
             global_delta: Common delta value to be used by all columns as a fail-safe. Defaults to 0.0
-            sdf: Spark DataFrame to be converted. Can change to a different dataframe with set_df()
+            sdf: Spark DataFrame to be converted. Can change to a different DataFrame with set_df()
         """
 
         self.sdf: Optional[SparkDataFrame] = None
