@@ -4,7 +4,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="spark_privacy_preserver", # Replace with your own username
+    name="spark_privacy_preserver",  # Replace with your own username
     version="0.0.1",
     author="thamindu",
     author_email="thamindu.randil@gmail.com",
