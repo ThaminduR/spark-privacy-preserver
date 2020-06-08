@@ -1,7 +1,8 @@
-mondrian_tests/
 __pycache__/
+.ipynb_checkpoints/
+data/
 mondrian_tests/
 spark_privacy_preserver/__pycache__
-utils/__pycache__/
-test.md
-data/
+spark_privacy_preserver/mondrain_utils/__pycache__/
+
+
