@@ -8,11 +8,9 @@ This module provides a simple tool for anonymizing a dataset using Spark. Given 
 
 ## Demo
 
-Jupyter notebook for each of the following modules are included.
+A Jupyter notebook can be found here
 
-- Mondrian Based Anonymity (Single User Anonymization included)
-- Clustering Based K-Anonymity
-- Differential Privacy
+`TODO: add jupyter notebook`
 
 ## Requirements
 

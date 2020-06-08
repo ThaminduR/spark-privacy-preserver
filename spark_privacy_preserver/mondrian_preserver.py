@@ -1,6 +1,6 @@
 
 from pyspark.sql.functions import PandasUDFType, lit, pandas_udf
-from mondrian_utils.utility import *
+from .mondrian_utils.utility import *
 
 
 def k_anonymizer(df, k, feature_columns, sensitive_column, categorical):

@@ -1,6 +1,7 @@
 mondrian_tests/
 __pycache__/
 mondrian_tests/
+spark_privacy_preserver/__pycache__
 utils/__pycache__/
 test.md
 data/

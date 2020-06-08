@@ -1,5 +1,5 @@
 import unittest
-from mondrian_preserver import Preserver
+from spark_privacy_preserver.mondrian_preserver import Preserver
 from pyspark.sql import SparkSession
 from pyspark.sql.types import *
 import random
