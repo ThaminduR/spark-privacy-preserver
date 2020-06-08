@@ -307,4 +307,153 @@ Make sure the following Python packages are installed:
 
 ### Procedure
 
-Step by step procedure on how to use the module with explanation is given in the following notebook: **differential_privacy_demo.ipynb**
+Step by step procedure on how to use the module with explanation is given in the following 
+notebook: **differential_privacy_demo.ipynb**
+
+1. Create a Spark Session. Make sure to enable PyArrow configuration.
+
+```python
+from pyspark.sql import SparkSession
+
+spark = SparkSession.builder \
+    .master('local') \
+    .appName('differential_privacy') \
+    .config('spark.some.config.option', 'some-value') \
+    .getOrCreate()
+
+spark.conf.set('spark.sql.execution.arrow.enabled', 'true')
+```
+
+2. Create a Spark DataFrame (sdf). 
+
+Generate an sdf with random values. It is better to manually specify the **schema** of sdf so as to avoid 
+any *TypeErrors*.
+
+Here I will generate an sdf with 3 columns: *'Numeric'*, *'Rounded_Numeric'*, *'Boolean'* and 10,000 rows 
+to show 3 ways of using DPLib.
+
+```python
+from random import random, randint, choice
+from pyspark.sql.types import *
+
+# generate a row with random numbers of range(0, 100000) and random strings of either 'yes' or 'no'
+def generate_rand_tuple():
+    number_1 = randint(0, 100000) + random()
+    number_2 = randint(0, 100000) + random()
+    string = choice(['yes', 'no'])
+    return number_1, number_2, string
+
+data = [generate_rand_tuple() for _ in range(100000)]
+
+schema = StructType([
+    StructField('Number', FloatType()),
+    StructField('Rounded_Number', DoubleType()),
+    StructField('Boolean', StringType())
+])
+
+sdf = spark.createDataFrame(data=data, schema=schema)
+sdf.show(n=5)
+```
+
+3. Setup and configure **DPLib**
+
+DPLib can work with numbers and binary strings. To anonymize a number based column, you have to setup the column 
+category as *'numeric'*. To anonymize a string based column, you have to setup the column category as *'boolean'*.
+
+3.1 Initializing the module
+
+The module takes in 3 optional parameters when initializing: *Spark DataFrame*, *epsilon* and *delta*. Module can also 
+be initialized without any parameters and they can be added later.
+
+```python
+from spark_privacy_preserver.differential_privacy import DPLib
+
+epsilon = 0.00001
+delta = 0.5
+sensitivity = 10
+
+# method 1
+dp = DPLib(global_epsilon=epsilon, global_delta=delta, sdf=sdf)
+dp.set_global_sensitivity(sensitivity=sensitivity)
+
+# method 2
+dp = DPLib()
+dp.set_sdf(sdf=sdf)
+dp.set_global_epsilon_delta(epsilon=epsilon, delta=delta)
+dp.set_global_sensitivity(sensitivity=sensitivity)
+
+```
+
+**Note:** The reason behind the word *global* in above functions
+
+Suppose the user want to anonymize 3 columns of a DataFrame with same epsilon, delta and sensitivity and another 
+column with different parameters. Now all the user has to do is to set up global parameters for 3 columns and 
+local parameters for 4th column. 
+
+This will simplify when multiple columns of a DataFrame have to be processed with same parameters.
+
+3.2 Configuring columns
+
+User can configure columns with column specific parameters. Column specific parameters will be given higher priority 
+over global parameters if explicitly specified.
+
+parameters that can be applied to method *set_column()*:
+1. column_name: name of column as string -> compulsory
+2. category: category of column. can be either *'numeric'* or *'boolean'* -> compulsory
+3. epsilon: column specific value -> optional
+4. delta: column specific value -> optional
+5. sensitivity: column specific value -> optional
+6. lower_bound: set minimum number a column can have. can only be applied to category *'numeric'* -> optional
+7. upper_bound: set maximum number a column can have. can only be applied to category *'numeric'* -> optional
+8. label1: string label for a column. can only be applied to category *'binary'* -> optional
+9. label2: string label for a column. can only be applied to category *'binary'* -> optional
+10. round: value by which to round the result. can only be applied to category *'numeric'* -> optional
+
+```python
+dp.set_column(column_name='Number', 
+              category='numeric')
+# epsilon, delta, sensitivity will be taken from global parameters and applied.
+
+dp.set_column(column_name='Rounded_Number', 
+              category='numeric',
+              epsilon=epsilon * 10,
+              sensitivity=sensitivity * 10,
+              lower_bound=round(sdf.agg({'Rounded_Number': 'min'}).collect()[0][0]) + 10000,
+              upper_bound=round(sdf.agg({'Rounded_Number': 'max'}).collect()[0][0]) - 10000,
+              round=2)
+# epsilon, sensitivity will be taken from user input instead of global parameters
+# delta will be taken from global parameters.
+
+dp.set_column(column_name='Boolean',
+              category='boolean',
+              label1='yes',
+              label2='no',
+              delta=delta if 0 < delta <= 1 else 0.5)
+# sensitivity will be taken from user input instead of global parameters
+# epsilon will be taken from global parameters.
+# 'boolean' category does not require delta
+
+dp._DPLib__columns
+```
+
+3.3 Executing
+
+```python
+# gets first 20 rows of DataFrame before anonymizing and after anonymizing
+sdf.show()
+
+dp.execute()
+
+dp.sdf.show()
+```
+
+As you can see, there is a clear difference between original DataFrame and anonymized DataFrame.
+
+1. Column *'Number'* is anonymized but the values are not bound to a certain range. The algorithm produces the result 
+with maximum precision as it can achieve.
+
+2. Column *'Rounded_Number'* is both anonymized and bounded to the values set by user. As you can see, the values 
+never rise above upper bound and never become lower than lower bound. Also they are rounded to 2nd decimal place as set.
+
+3. Column *'Boolean'* undergoes through a mechanism that randomly decides to flip to the other binary value or not, 
+in order to satisfy differential privacy.
