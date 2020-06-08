@@ -1,5 +1,5 @@
 import pandas as pd
-from DPLib import DPInterface
+from spark_privacy_preserver.differential_privacy import DPInterface
 
 df = pd.read_csv("data_53000kb.csv",
                  engine='python',

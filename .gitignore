@@ -5,3 +5,11 @@ test.ipynb
 env
 experiment.ipynb
 backup.py
+__pycache__/
+.ipynb_checkpoints/
+build/
+dist/
+mondrian_tests/
+spark_privacy_preserver/__pycache__
+spark_privacy_preserver/mondrain_utils/__pycache__/
+spark_privacy_preserver.egg-info/
