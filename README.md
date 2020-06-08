@@ -18,7 +18,7 @@ Jupyter notebook for each of the following modules are included.
 
 ## Requirements
 
-Requirements for each submodule is given under relevant topic
+Requirements for submodules are given under each topic. 
 
 ## Installation
 
@@ -28,9 +28,9 @@ Use `pip install spark_privacy_preserver` to install library
 
 ### using source code
 
-Add the spark_privacy_preserver folder to your working directory and you can import the required submodule from the library.
+Clone the repository to your PC and run `pip install .` to build and install the package.
 
-## Usage - Basic Mondrian
+## Basic Mondrian Anoymizing
 
 
 ### Requirements - Basic Mondrian Anonymize
