@@ -1,24 +1,36 @@
 # spark-privacy-preserver
 
-This module provides a simple tool for anonymizing a dataset using Spark. Given a `spark.sql.dataframe` with relevant metadata mondrian_privacy_preserver generates a anonymized `spark.sql.dataframe`. This provides following privacy preserving techniques for the anonymization.
+This module provides a simple tool for anonymizing a dataset using PySpark. Given a `spark.sql.dataframe` with relevant metadata mondrian_privacy_preserver generates a anonymized `spark.sql.dataframe`. This provides following privacy preserving techniques for the anonymization.
 
 - K Anonymity
 - L Diversity
 - T Closeness
 
+Note: Only works with PySpark
+
 ## Demo
 
-A Jupyter notebook can be found here
+Jupyter notebook for each of the following modules are included.
 
-`TODO: add jupyter notebook`
+- Mondrian Based Anonymity (Single User Anonymization included)
+- Clustering Based K-Anonymity
+- Differential Privacy
 
 ## Requirements
 
-- Apache Spark (versions 2.4.5 and higher are supported).
+- PySpark 2.4.5. You can easily install it with `pip install pyspark`.
 - PyArrow. You can easily install it with `pip install pyarrow`.
 - Pandas. You can easily install it with `pip install pandas`.
 
 ## Installation
+
+### Using pip
+
+Use `pip install spark_privacy_preserver` to install library
+
+### using source code
+
+Add the spark_privacy_preserver folder to your working directory and you can import the required submodule from the library.
 
 ## Usage - Basic Mondrian
 
