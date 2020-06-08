@@ -13,7 +13,7 @@ Note: Only works with PySpark
 Jupyter notebook for each of the following modules are included.
 
 - Mondrian Based Anonymity (Single User Anonymization included)
-- Clustering Based K-Anonymity
+- Clustering Based Anonymity
 - Differential Privacy
 
 ## Requirements
