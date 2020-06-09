@@ -18,7 +18,26 @@ Jupyter notebook for each of the following modules are included.
 
 ## Requirements
 
-Requirements for submodules are given under each topic. 
+* Python
+
+Python versions above Python 3.6 and below Python 3.8 are recommended. The module is developed and tested on: 
+Python 3.7.7 and pip 20.0.2. (It is better to avoid Python 3.8 as it has some compatibility issues with Spark)
+
+* PySpark
+
+Spark 2.4.5 is recommended. 
+
+* Java
+
+Java 8 is recommended. Newer versions of java are incompatible with Spark.
+
+The module is developed and tested on:
+    
+    java version "1.8.0_231"
+    Java(TM) SE Runtime Environment (build 1.8.0_231-b11)
+    Java HotSpot(TM) 64-Bit Server VM (build 25.231-b11, mixed mode)
+
+*Requirements for submodules are given under each topic. 
 
 ## Installation
 
@@ -278,26 +297,7 @@ according to the parameters. When the scale becomes larger, the deviation from o
 
 ## Achieving Differential Privacy
     
-### Requirements
-
-* Python
-
-Python versions above Python 3.6 and below Python 3.8 are recommended. The module is developed and tested on: 
-Python 3.7.7 and pip 20.0.2. (It is better to avoid Python 3.8 as it has some compatibility issues with Spark)
-
-* Apache Spark
-
-Spark 2.4.5 is recommended. 
-
-* Java
-
-Java 8 is recommended. Newer versions of java are incompatible with Spark.
-
-The module is developed and tested on:
-    
-    java version "1.8.0_231"
-    Java(TM) SE Runtime Environment (build 1.8.0_231-b11)
-    Java HotSpot(TM) 64-Bit Server VM (build 25.231-b11, mixed mode)
+### Requirements - DIfferential Preserver
 
 Make sure the following Python packages are installed:
 1. PySpark: ```pip install pyspark==2.4.5```
