@@ -14,4 +14,7 @@ mondrian_tests/
 spark_privacy_preserver/__pycache__
 spark_privacy_preserver/mondrain_utils/__pycache__/
 spark_privacy_preserver.egg-info/
-
+mondrian_loadtest.ipynb
+data/
+tests/__pycache__
+spark_privacy_preserver/clustering_utils/__pycache__/

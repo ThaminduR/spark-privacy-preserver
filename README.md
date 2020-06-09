@@ -13,12 +13,31 @@ Note: Only works with PySpark
 Jupyter notebook for each of the following modules are included.
 
 - Mondrian Based Anonymity (Single User Anonymization included)
-- Clustering Based K-Anonymity
+- Clustering Based Anonymity
 - Differential Privacy
 
 ## Requirements
 
-Requirements for submodules are given under each topic. 
+* Python
+
+Python versions above Python 3.6 and below Python 3.8 are recommended. The module is developed and tested on: 
+Python 3.7.7 and pip 20.0.2. (It is better to avoid Python 3.8 as it has some compatibility issues with Spark)
+
+* PySpark
+
+Spark 2.4.5 is recommended. 
+
+* Java
+
+Java 8 is recommended. Newer versions of java are incompatible with Spark.
+
+The module is developed and tested on:
+    
+    java version "1.8.0_231"
+    Java(TM) SE Runtime Environment (build 1.8.0_231-b11)
+    Java HotSpot(TM) 64-Bit Server VM (build 25.231-b11, mixed mode)
+
+*Requirements for submodules are given in the relevant section. 
 
 ## Installation
 
@@ -29,6 +48,31 @@ Use `pip install spark_privacy_preserver` to install library
 ### using source code
 
 Clone the repository to your PC and run `pip install .` to build and install the package.
+
+## Usage
+
+Usage of each module is described in the relevant section.
+
+### For Mondrian Anonymization and Clustering Anonymization
+
+You'll need to construct a schema to get the anonymized `spark.sql.dataframe` dataframe.
+You need to consider the column names and thier data types to construct this. Output of functions of the Mondrian and Clustering Anonymization is described in thier relevant sections. 
+
+Following code snippet shows how to construct an example schema.
+
+```python
+from spark.sql.type import *
+
+#age, occupation - feature columns
+#income - sensitive column
+
+schema = StructType([
+    StructField("age", DoubleType()),
+    StructField("occupation", StringType()),
+    StructField("income", StringType()),
+])
+```
+_______________________________________________________________________________________________________
 
 ## Basic Mondrian Anoymizing
 
@@ -43,6 +87,7 @@ Clone the repository to your PC and run `pip install .` to build and install the
 
 The `spark.sql.dataframe` you get after anonymizing will always contain a extra column `count` which indicates the number of similar rows.
 Return type of all the non categorical columns will be string
+You need to always consider the count column when constructing the schema. Count column is an integer type column.
 
 ```python
 from spark_privacy_preserver.mondrian_preserver import Preserver #requires pandas
@@ -79,23 +124,6 @@ your_anonymized_dataframe = Preserver.k_anonymize(df,
                                                 schema)
 ```
 
-Following code snippet shows how to construct an example schema.
-You need to always consider the count column when constructing the schema. Count column is an integer type column.
-
-```python
-from spark.sql.type import *
-
-#age, occupation - feature columns
-#income - sensitive column
-
-schema = StructType([
-    StructField("age", DoubleType()),
-    StructField("occupation", StringType()),
-    StructField("income", StringType()),
-    StructField("count", IntegerType())
-])
-```
-
 ### K Anonymity (without row suppresion)
 
 This function provides a simple way to anonymize a dataset which has an user identification attribute without grouping the rows.    
@@ -107,6 +135,7 @@ Function takes exact same parameters as the above function. To use this method t
 
 Same as the K Anonymity, the `spark.sql.dataframe` you get after anonymizing will always contain a extra column `count` which indicates the number of similar rows.
 Return type of all the non categorical columns will be string
+You need to always consider the count column when constructing the schema. Count column is an integer type column.
 
 ```python
 from spark_privacy_preserver.mondrian_preserver import Preserver #requires pandas
@@ -156,6 +185,7 @@ Function takes exact same parameters as the above function. To use this method t
 
 Same as the K Anonymity, the `spark.sql.dataframe` you get after anonymizing will always contain a extra column `count` which indicates the number of similar rows.
 Return type of all the non categorical columns will be string
+You need to always consider the count column when constructing the schema. Count column is an integer type column.
 
 ```python
 from spark_privacy_preserver.mondrian_preserver import Preserver #requires pandas
@@ -251,6 +281,8 @@ your_anonymized_dataframe = Preserver.anonymize_user(df,
                                                 random)
 
 ```
+_______________________________________________________________________________________________________
+
 ## Introduction to Differential Privacy
 
 Differential privacy is one of the data preservation paradigms similar to K-Anonymity, T-Closeness and L-Diversity.
@@ -278,26 +310,7 @@ according to the parameters. When the scale becomes larger, the deviation from o
 
 ## Achieving Differential Privacy
     
-### Requirements
-
-* Python
-
-Python versions above Python 3.6 and below Python 3.8 are recommended. The module is developed and tested on: 
-Python 3.7.7 and pip 20.0.2. (It is better to avoid Python 3.8 as it has some compatibility issues with Spark)
-
-* Apache Spark
-
-Spark 2.4.5 is recommended. 
-
-* Java
-
-Java 8 is recommended. Newer versions of java are incompatible with Spark.
-
-The module is developed and tested on:
-    
-    java version "1.8.0_231"
-    Java(TM) SE Runtime Environment (build 1.8.0_231-b11)
-    Java HotSpot(TM) 64-Bit Server VM (build 25.231-b11, mixed mode)
+### Requirements - DIfferential Preserver
 
 Make sure the following Python packages are installed:
 1. PySpark: ```pip install pyspark==2.4.5```
@@ -457,3 +470,128 @@ never rise above upper bound and never become lower than lower bound. Also they 
 
 3. Column *'Boolean'* undergoes through a mechanism that randomly decides to flip to the other binary value or not, 
 in order to satisfy differential privacy.
+
+_______________________________________________________________________________________________________
+
+## Clustering Anonymizer
+
+### Requirements - Clustering Anonymize
+
+* PySpark 2.4.5. You can easily install it with `pip install pyspark`
+* PyArrow `pip install pyarrow`
+* Pandas `pip intall pandas`
+
+### Clustering Based K Anonymity
+
+Only recommend if there are more catogorical columns, than numerical column. if there are more numerical column, then modrian algorithm is recommended. 
+
+It is recommended to use 5 <= k <= 20 to minimize the data loss, if your data set is small better to use a small k value 
+
+he spark.sql.dataframe you get after anonymizing will always contain a extra column count which indicates the number of similar rows. Return type of all the non categorical columns will be string
+
+
+In Clustering base Anonymizer you can choose how the how to initialize the cluster centroids. 
+
+1. 'fcbg' = This method return cluster centroids weight on the probability of row's column values appear in dataframe. Default Value.
+2. 'rsc'  = This method will choose centroids weight according to the column that has most number of unique values.
+3. 'random = Return cluster centroids in randomly.
+
+just enter the `center_type= 'fcbg'`to use fcbg, default is **fcbg**
+
+You can also decide the clustering method.
+1. default is special method 
+2. kmodes method 
+
+if you want to use default dont enter anything to attribute `mode=`, else if you want to use the kmodes method `mode= 'kmode'`
+if you have a huge data amount default is recommended. 
+
+you can also decide the return mode. If this value equal to `return_mode=''equal` ; K anonymization will done with equal member clusters. Default value is 'Not_Equal'
+Not equal is often run fast, but could be data lossy. equal is vice versa. 
+
+Below is a full example:
+```python
+from pyspark.sql.types import *
+from pyspark.sql.functions import PandasUDFType, lit, pandas_udf
+from clustering_preserver import Kanonymizer
+from pyspark.sql import SparkSession
+from pyspark.sql import SQLContext
+from gv import init
+from anonymizer import Anonymizer
+
+df = spark.read.format('csv').option("header", "true").option("inferSchema", "true").load("reduced_adult.csv")
+
+schema = StructType([
+StructField("age", StringType()),
+StructField("workcalss", StringType()),
+StructField("education_num", StringType()),
+StructField("matrital_status", StringType()),
+StructField("occupation", StringType()),
+StructField("sex", StringType()),
+StructField("race", StringType()),
+StructField("native_country", StringType()),
+StructField("class", StringType())
+])
+
+QI = ['age', 'workcalss','education_num', 'matrital_status', 'occupation', 'race', 'sex', 'native_country']
+SA = ['class']
+CI = [1,3,4,5,6,7]
+
+k_df = Anonymizer.k_anonymize(
+    df, schema, QI, SA, CI, k=10, mode='', center_type='random', return_mode='Not_equal', iter=1)
+k_df.show()
+```
+
+### Clustering based L-Diversity
+
+This method is recommended only for k anonymized dataframe. 
+Input anonymized dataframe will group into similar k clusters and clusters that have not L number of distinct sensitive attributes 
+will be suspressed.
+Recommended small number of l to minimum the data loss. Default value is l = 2.
+
+```python
+## k_df - K anonymized spark dataframe
+## schema - output spark dataframe schema
+## QI - Quasi Identifiers. Type list
+## SA = Sensitive attributes . Type list
+
+ QI = ['column1', 'column2', 'column3']
+ CI = [1, 2]
+ SA = ['column4']
+ schema = StructType([
+     StructField("column1", StringType()),
+     StructField("column2", StringType()),
+     StructField("column3", StringType()),
+     StructField("column4", StringType()),
+ ])
+
+l_df = Anonymizer.l_diverse(k_df,schema, QI, l=2)
+l_df.show()
+```
+
+### Clustering based T closeness
+
+This method is recommended only for k anonymized dataframe. 
+Input anonymized dataframe will group into similar k clusters and clusters that not have sensitive attribute distribution according to t value will be suspressed.
+t should be in between 0 and 1.
+Larger value of t to minimum the data loss. Default value is t = 0.2.
+
+```python 
+## k_df - K anonymized spark dataframe
+## schema - output spark dataframe schema
+## QI - Quasi Identifiers. Type list
+## SA = Sensitive attributes . Type list
+
+ QI = ['column1', 'column2', 'column3']
+ CI = [1, 2]
+ SA = ['column4']
+ schema = StructType([
+     StructField("column1", StringType()),
+     StructField("column2", StringType()),
+     StructField("column3", StringType()),
+     StructField("column4", StringType()),
+ ])
+
+t_df = Anonymizer.t_closer(
+    k_df,schema, QI, SA, t=0.3, verbose=1)
+t_df.show()
+```
