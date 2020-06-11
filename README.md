@@ -445,8 +445,21 @@ dp.set_column(column_name='Boolean',
 # sensitivity will be taken from user input instead of global parameters
 # epsilon will be taken from global parameters.
 # 'boolean' category does not require delta
+```
 
-dp._DPLib__columns
+3.2.1 To view existing configuration for the class, use following method
+
+```python
+dp.get_config()
+```
+
+3.2.2 To drop a column or to drop all columns use the *drop_column()* method. 
+To drop all columns use '*' as input parameter
+
+```python
+dp.drop_column('Rounded_Number', 'Number')
+
+dp.drop_column('*')
 ```
 
 3.3 Executing
