@@ -1,12 +1,12 @@
 from pyspark.sql.functions import udf  # type: ignore
 from pyspark.sql.types import DoubleType, StringType  # type: ignore
-
 from diffprivlib.mechanisms import LaplaceTruncated, Binary  # type: ignore
+from tabulate import tabulate  # type: ignore
 
 # Following imports provide type checking functionality to the library
 from pyspark.sql.dataframe import DataFrame as SparkDataFrame  # type: ignore
 from numbers import Real  # type: ignore
-from typing import Dict, Union, Optional  # type: ignore
+from typing import List, Dict, Union, Optional  # type: ignore
 import sys  # type: ignore
 
 if sys.version_info >= (3, 8):
@@ -59,7 +59,7 @@ class DPLib:
         execute: changes existing sdf to be differentially private. This change is not reversible.
 
     Examples:
-        Check out the example.ipynb Jupyter notebook
+        Check out `differential_preserver_demo.ipynb` Jupyter notebook
 
     """
 
@@ -167,8 +167,8 @@ class DPLib:
             raise ValueError("Labels must not match")
 
         # finds unique values in a column
-        labels: list = [row[column_name] for row in sdf.select(column_name).distinct().collect()]
-        
+        labels: List[str] = [row[column_name] for row in sdf.select(column_name).distinct().collect()]
+
         if len(labels) is not 2 or label1 not in labels or label2 not in labels:
             # checks whether all the rows of column have either label1 or label2
             raise ValueError("Column has multiple unique labels")
@@ -333,6 +333,72 @@ class DPLib:
 
         self.__columns[str(column_name)] = column
 
+    def drop_column(self, *columns: str) -> None:
+        """ drops a column added using `add_column()` method from `self.__columns`
+
+        Args:
+            *columns: one or more column names in string format separated by comma
+                        if '*' is given, all columns will be dropped
+
+        """
+
+        if len(columns) == 1 and '*' in columns:
+            self.__columns = {}
+        else:
+            for column in columns:
+                if column in self.__columns:
+                    del self.__columns[column]
+
+    def get_config(self) -> None:
+
+        print('Global parameters')
+        print('-----------------\n')
+
+        global_table: List[List[Union[float, str]]] = [
+            ['Epsilon', self.__epsilon if self.__epsilon is not None else '--'],
+            ['Delta', self.__delta if self.__delta is not None else '--'],
+            ['Sensitivity', self.__sensitivity if self.__sensitivity is not None else '--']
+        ]
+
+        print(tabulate(tabular_data=global_table,
+                       tablefmt='plain',
+                       disable_numparse=True))
+
+        print('\n')
+        print('Column specific parameters')
+        print('--------------------------\n')
+
+        column_table: List[List] = []
+
+        for column_name, details in self.__columns.items():
+            row: List = [column_name,
+                         details['category'],
+                         details['epsilon'] if 'epsilon' in details else '--',
+                         details['delta'] if 'delta' in details else '--',
+                         details['sensitivity'] if 'sensitivity' in details else '--',
+                         details['lower_bound'] if 'lower_bound' in details else '--',
+                         details['upper_bound'] if 'upper_bound' in details else '--',
+                         details['round'] if 'round' in details else '--',
+                         details['label1'] if 'label1' in details else '--',
+                         details['label2'] if 'label2' in details else '--'
+                         ]
+            column_table.append(row)
+
+        if self.sdf is not None and isinstance(self.sdf, SparkDataFrame):
+            for column in self.sdf.columns:
+                if column not in self.__columns:
+                    row = [column]
+                    row += '--' * 9
+                    column_table.append(row)
+
+        print(tabulate(tabular_data=column_table,
+                       tablefmt='github',
+                       disable_numparse=True,
+                       headers=['Column name', 'Column category', 'Epsilon', 'Delta', 'Sensitivity', 'Lower bound',
+                                'Upper bound', 'Round', 'Label 1', 'Label 2']
+                       )
+              )
+
     def execute(self):
         r"""
 
@@ -342,14 +408,15 @@ class DPLib:
 
         """
 
-        laplace = LaplaceTruncated()
-        binary = Binary()
+        laplace: LaplaceTruncated = LaplaceTruncated()
+        binary: Binary = Binary()
 
         for column_name, details in self.__columns.items():
 
             if details['category'] is 'numeric':
 
-                self.sdf = self.sdf.withColumn(column_name, self.sdf[column_name].cast(DoubleType()))
+                self.sdf = self.sdf.withColumn(colName=column_name,
+                                               col=self.sdf[column_name].cast(DoubleType()))
 
                 laplace.set_epsilon_delta(epsilon=details['epsilon'], delta=details['delta'])
                 laplace.set_sensitivity(details['sensitivity'])
@@ -362,7 +429,8 @@ class DPLib:
 
                     round_randomise_udf = udf(f=round_randomise, returnType=DoubleType())
 
-                    self.sdf = self.sdf.withColumn(column_name, round_randomise_udf(column_name))
+                    self.sdf = self.sdf.withColumn(colName=column_name,
+                                                   col=round_randomise_udf(column_name))
 
                 else:
 
@@ -371,11 +439,13 @@ class DPLib:
 
                     randomise_udf = udf(f=randomise, returnType=DoubleType())
 
-                    self.sdf = self.sdf.withColumn(column_name, randomise_udf(column_name))
+                    self.sdf = self.sdf.withColumn(colName=column_name,
+                                                   col=randomise_udf(column_name))
 
             elif details['category'] is 'boolean':
 
-                self.sdf = self.sdf.withColumn(column_name, self.sdf[column_name].cast(StringType()))
+                self.sdf = self.sdf.withColumn(colName=column_name,
+                                               col=self.sdf[column_name].cast(StringType()))
 
                 binary.set_epsilon_delta(epsilon=details['epsilon'], delta=details['delta'])
                 binary.set_labels(value0=details['label1'], value1=details['label2'])
@@ -385,4 +455,5 @@ class DPLib:
 
                 randomise_udf = udf(f=randomise, returnType=StringType())
 
-                self.sdf = self.sdf.withColumn(column_name, randomise_udf(column_name))
+                self.sdf = self.sdf.withColumn(colName=column_name,
+                                               col=randomise_udf(column_name))
