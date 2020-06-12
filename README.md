@@ -317,6 +317,7 @@ Make sure the following Python packages are installed:
 2. PyArrow: ```pip install pyarrow==0.17.1```
 3. IBM Differential Privacy Library: ```pip install diffprivlib==0.2.1```
 4. MyPy:  ```pip install mypy==0.770```
+5. Tabulate: ```tabulate==0.8.7```
 
 ### Procedure
 
