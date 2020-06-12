@@ -171,7 +171,7 @@ class DPLib:
 
         if len(labels) is not 2 or label1 not in labels or label2 not in labels:
             # checks whether all the rows of column have either label1 or label2
-            raise ValueError("Column has multiple unique labels")
+            raise ValueError("Labels in column `%s` does not match with labels entered" % column_name)
 
         return True
 
@@ -196,6 +196,24 @@ class DPLib:
 
         if lower > upper:
             raise ValueError("Lower bound must not be greater than upper bound")
+
+        return True
+
+    @staticmethod
+    def __check_sdf(sdf: SparkDataFrame):
+        r"""
+
+        Args:
+            sdf: Spark DataFrame
+
+        Returns: True if sdf satisfies the condition
+
+        Raises: TypeError if sdf does not obey the rules
+
+        """
+
+        if sdf is not None and not isinstance(sdf, SparkDataFrame):
+            raise TypeError('Given sdf is not a Spark DataFrame')
 
         return True
 
@@ -237,7 +255,7 @@ class DPLib:
 
         """
 
-        if isinstance(sdf, SparkDataFrame):
+        if self.__check_sdf(sdf):
             self.sdf = sdf
 
     def set_column(self, column_name: str, category: str,
@@ -280,12 +298,13 @@ class DPLib:
 
         if self.sdf is None:
             raise ValueError("Add an eligible Spark DataFrame before adding columns")
+        self.__check_sdf(self.sdf)
 
         if column_name not in self.sdf.columns:
             raise ValueError("Cannot find column in given DataFrame")
 
         if category not in ['numeric', 'boolean']:
-            raise ValueError("Cannot find category in available list")
+            raise ValueError("category must be either `numeric` or `boolean`")
 
         column: Column = {'category': category}
 
@@ -403,13 +422,16 @@ class DPLib:
         r"""
 
         Raises:
-            The method itself will not raise any exceptions.
-            However inner methods may raise Exception, only if parameters have not been set correctly
+            ValueError: if self.__columns is empty
+            inner methods may raise Exception, only if parameters have not been set correctly
 
         """
 
         laplace: LaplaceTruncated = LaplaceTruncated()
         binary: Binary = Binary()
+
+        if self.__columns == {}:
+            raise ValueError('No columns added for execution')
 
         for column_name, details in self.__columns.items():
 
