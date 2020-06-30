@@ -1,7 +1,6 @@
 
 .idea
 data.csv
-test.ipynb
 .mypy_cache
 env
 experiment.ipynb

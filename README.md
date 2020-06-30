@@ -1,6 +1,6 @@
 # spark-privacy-preserver
 
-This module provides a simple tool for anonymizing a dataset using PySpark. Given a `spark.sql.dataframe` with relevant metadata mondrian_privacy_preserver generates an anonymized `spark.sql.dataframe`. This provides following privacy preserving techniques for the anonymization.
+This module provides a simple tool for anonymizing a dataset using PySpark. Given a `spark.sql.dataframe` with relevant metadata mondrian_privacy_preserver generates a anonymized `spark.sql.dataframe`. This provides following privacy preserving techniques for the anonymization.
 
 - K Anonymity
 - L Diversity
@@ -317,6 +317,7 @@ Make sure the following Python packages are installed:
 2. PyArrow: ```pip install pyarrow==0.17.1```
 3. IBM Differential Privacy Library: ```pip install diffprivlib==0.2.1```
 4. MyPy:  ```pip install mypy==0.770```
+5. Tabulate: ```tabulate==0.8.7```
 
 ### Procedure
 
@@ -445,8 +446,21 @@ dp.set_column(column_name='Boolean',
 # sensitivity will be taken from user input instead of global parameters
 # epsilon will be taken from global parameters.
 # 'boolean' category does not require delta
+```
 
-dp._DPLib__columns
+3.2.1 To view existing configuration for the class, use following method
+
+```python
+dp.get_config()
+```
+
+3.2.2 To drop a column or to drop all columns use the *drop_column()* method. 
+To drop all columns use '*' as input parameter
+
+```python
+dp.drop_column('Rounded_Number', 'Number')
+
+dp.drop_column('*')
 ```
 
 3.3 Executing
