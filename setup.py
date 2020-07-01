@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="spark_privacy_preserver",  # Replace with your own username
-    version="0.1.0",
+    version="0.2.0",
     author="thamindu",
     author_email="thamindu.randil@gmail.com",
     description="Anonymizing Library for Apache Spark",

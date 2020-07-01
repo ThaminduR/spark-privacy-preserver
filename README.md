@@ -1,10 +1,12 @@
 # spark-privacy-preserver
 
-This module provides a simple tool for anonymizing a dataset using PySpark. Given a `spark.sql.dataframe` with relevant metadata mondrian_privacy_preserver generates a anonymized `spark.sql.dataframe`. This provides following privacy preserving techniques for the anonymization.
+This module provides a simple tool for anonymizing a dataset using PySpark. Given a `spark.sql.dataframe` with relevant metadata mondrian_privacy_preserver generates an anonymized `spark.sql.dataframe`. This provides following privacy preserving techniques for the anonymization.
 
 - K Anonymity
 - L Diversity
 - T Closeness
+
+This also include Differential Privacy.
 
 Note: Only works with PySpark
 
