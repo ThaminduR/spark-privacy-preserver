@@ -496,6 +496,7 @@ ________________________________________________________________________________
 * PySpark 2.4.5. You can easily install it with `pip install pyspark`
 * PyArrow `pip install pyarrow`
 * Pandas `pip intall pandas`
+* kmodes `pip install kmodes`
 
 ### Clustering Based K Anonymity
 
@@ -580,7 +581,7 @@ Recommended small number of l to minimum the data loss. Default value is l = 2.
      StructField("column4", StringType()),
  ])
 
-l_df = Anonymizer.l_diverse(k_df,schema, QI, l=2)
+l_df = Anonymizer.l_diverse(k_df,schema, QI,SA, l=2)
 l_df.show()
 ```
 
