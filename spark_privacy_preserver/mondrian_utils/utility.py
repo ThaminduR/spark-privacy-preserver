@@ -183,11 +183,14 @@ def agg_numerical_column(series):
             else:
                 string = '0-'
         else:
-            min_start = minm[:-1]
-            if(minimum >= int(min_start+'5')):
-                string = min_start+'5-'
+            if (minm[-1]=='0'):
+            string = minm +"-"
             else:
-                string = min_start+'0-'
+                min_start = minm[:-1]
+                if(minimum >= int(min_start+'5')):
+                    string = min_start+'5-'
+                else:
+                    string = min_start+'0-'
 
         if(len(maxm) == 1):
             if(maximum >= 5):
@@ -195,11 +198,14 @@ def agg_numerical_column(series):
             else:
                 string += '5'
         else:
-            max_start = maxm[:-1]
-            if(maximum >= int(max_start+'5')):
-                string += str(int(max_start+'0') + 10)
+            if(maxm[-1]=='0'):
+            string += maxm
             else:
-                string += max_start+'5'
+                max_start = maxm[:-1]
+                if(maximum > int(max_start+'5')):
+                    string += str(int(max_start+'0') + 10)
+                else:
+                    string += max_start+'5'
 
     return string
 
@@ -406,33 +412,34 @@ def agg_columns(df, partdf, indexes, columns, categorical):
                 maxm = str(maximum)
                 minm = str(minimum)
                 if(len(minm) == 1):
-                    min_start = minm[-1]
                     if(minimum >= 5):
                         string = '5-'
                     else:
                         string = '0-'
                 else:
-                    min_start = minm[-2]
-                    if(minimum >= int(min_start+'5')):
-                        string = min_start+'5-'
+                    if (minm[-1]=='0'):
+                        string = minm +"-"
                     else:
-                        string = min_start+'0-'
+                        min_start = minm[:-1]
+                        if(minimum >= int(min_start+'5')):
+                            string = min_start+'5-'
+                        else:
+                            string = min_start+'0-'
 
                 if(len(maxm) == 1):
-                    max_start = maxm[-1]
                     if(maximum >= 5):
                         string += "10"
                     else:
                         string += '5'
                 else:
-                    max_start = maxm[-2]
-                    if(maximum >= int(max_start+'5')):
-                        string += str(int(max_start+'0') + 10)
+                    if(maxm[-1]=='0'):
+                        string += maxm
                     else:
-                        string += max_start+'5'
-
-                        min_start = minm[-2]
-                        max_start = maxm[-2]
+                        max_start = maxm[:-1]
+                        if(maximum > int(max_start+'5')):
+                            string += str(int(max_start+'0') + 10)
+                        else:
+                            string += max_start+'5'
 
             df[column] = df[column].astype(str)
             df.loc[indexes, column] = string
