@@ -184,7 +184,7 @@ def agg_numerical_column(series):
                 string = '0-'
         else:
             if (minm[-1]=='0'):
-            string = minm +"-"
+                string = minm +"-"
             else:
                 min_start = minm[:-1]
                 if(minimum >= int(min_start+'5')):
@@ -199,7 +199,7 @@ def agg_numerical_column(series):
                 string += '5'
         else:
             if(maxm[-1]=='0'):
-            string += maxm
+                string += maxm
             else:
                 max_start = maxm[:-1]
                 if(maximum > int(max_start+'5')):
