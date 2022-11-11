@@ -21,7 +21,7 @@ setuptools.setup(
     python_requires='>=3.6',
     install_requires=[
         'pandas>=1.1',
-        'pyspark==2.4.5',
+        'pyspark==3.2.2',
         'pyarrow==0.17.1',
         'diffprivlib==0.2.1',
         'tabulate==0.8.7',
